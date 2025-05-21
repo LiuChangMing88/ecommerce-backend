@@ -37,4 +37,3 @@ application-secrets.properties
 
 ### sql
 data.sql
-test-data.sql
