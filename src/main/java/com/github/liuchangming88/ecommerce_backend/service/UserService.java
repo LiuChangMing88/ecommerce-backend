@@ -110,7 +110,7 @@ public class UserService {
 
         VerificationToken verificationToken = opVerificationToken.get();
 
-        // Check if already verified
+        // Check if already verified (for safety)
         if (verificationToken.getLocalUser().getIsEmailVerified()) {
             LocalUser localUser = verificationToken.getLocalUser();
             localUser.setVerificationToken(null);

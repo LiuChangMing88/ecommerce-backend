@@ -4,10 +4,12 @@ import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.LoginResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
+import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,5 +41,18 @@ public class AuthenticationController {
     public ResponseEntity<String> verifyUser (@RequestParam String token) {
         userService.verifyUser(token);
         return new ResponseEntity<>("User has been verified!", HttpStatus.OK);
+    }
+
+    @GetMapping(path = "/profile")
+    public ResponseEntity<RegistrationResponse> getProfile (@AuthenticationPrincipal LocalUser localUser) {
+        return new ResponseEntity<>(
+                new RegistrationResponse(
+                        localUser.getUsername(),
+                        localUser.getEmail(),
+                        localUser.getFirstName(),
+                        localUser.getLastName(),
+                        ""
+                ), HttpStatus.OK
+        );
     }
 }

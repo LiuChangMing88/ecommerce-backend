@@ -47,10 +47,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             Optional<LocalUser> optionalLocalUser = localUserRepository.findByUsernameIgnoreCase(username);
             if (optionalLocalUser.isPresent()) {
                 LocalUser localUser = optionalLocalUser.get();
+                // If unverified but somehow got jwt token
+                if (!localUser.getIsEmailVerified())
+                    return;
                 // Build the authentication to then pass it into the security context.
                 // The authentication holds:
                 // 1. The user (the principal)
-                // 2. The credentials (which is normally password), but in this case, it can be null because jwt already handled password authentication
+                // 2. The credentials (which is normally password), but in this case, it can be null because UserService already handled password authentication
                 // 3. The list of roles (currently empty)
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(localUser, null, new ArrayList<>());
                 // Populate the authentication token even more with: remote IP address and session ID (via WebAuthenticationDetailsSource)
