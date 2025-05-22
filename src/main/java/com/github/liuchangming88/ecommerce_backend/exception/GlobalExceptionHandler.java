@@ -1,5 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.exception;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.github.liuchangming88.ecommerce_backend.api.model.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
@@ -111,6 +113,21 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad request",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    // For jwt token
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler({JWTVerificationException.class})
+    public ErrorResponse handleJwtVerificationExceptions (RuntimeException ex, HttpServletRequest request) {
+        logger.error("The JWT token was rejected: {}", ex.getMessage());
+        return new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
                 ex.getMessage(),
                 request.getRequestURI(),
                 null
