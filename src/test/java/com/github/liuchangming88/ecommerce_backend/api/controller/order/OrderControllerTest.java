@@ -28,10 +28,10 @@ public class OrderControllerTest {
     private JwtService jwtService;
 
     @Test
-    public void getAllOrders_unauthenticated_returns403() throws Exception {
+    public void getAllOrders_unauthenticated_returns401() throws Exception {
         mockMvc.perform(
                 MockMvcRequestBuilders.get("/orders")
-        ).andExpect(status().isForbidden());
+        ).andExpect(status().isUnauthorized());
     }
 
     // Test that the endpoint should return the authenticated user's list (not another user's)

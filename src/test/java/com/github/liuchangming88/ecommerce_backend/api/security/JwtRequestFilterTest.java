@@ -34,7 +34,7 @@ public class JwtRequestFilterTest {
     public void unauthenticatedRequests_rejected() throws Exception {
         mockMvc.perform(
                 MockMvcRequestBuilders.get(AUTHENTICATION_PATH)
-        ).andExpect(status().isForbidden());
+        ).andExpect(status().isUnauthorized());
     }
 
     // Test that invalid tokens are rejected
@@ -44,19 +44,19 @@ public class JwtRequestFilterTest {
         mockMvc.perform(
                 MockMvcRequestBuilders.get(AUTHENTICATION_PATH)
                         .header("Authorization", "")
-        ).andExpect(status().isForbidden());
+        ).andExpect(status().isUnauthorized());
 
         // Token header is invalid
         mockMvc.perform(
                 MockMvcRequestBuilders.get(AUTHENTICATION_PATH)
                         .header("Authorization", "Gibberish")
-        ).andExpect(status().isForbidden());
+        ).andExpect(status().isUnauthorized());
 
         // Token header is valid but the jwt token is invalid
         mockMvc.perform(
                 MockMvcRequestBuilders.get(AUTHENTICATION_PATH)
                         .header("Authorization", "Bearer Gibberish")
-        ).andExpect(status().isForbidden());
+        ).andExpect(status().isUnauthorized());
     }
 
     // Test that unverified users that somehow got a valid token are rejected
