@@ -1,5 +1,6 @@
 package com.github.liuchangming88.ecommerce_backend.security;
 
+import com.github.liuchangming88.ecommerce_backend.beans.SecurityConstants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,7 +23,7 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/register", "/auth/verify", "/products", "/error").permitAll()
+                        .requestMatchers(SecurityConstants.getPublicRequestMatchers()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtRequestFilter, AuthenticationFilter.class);
