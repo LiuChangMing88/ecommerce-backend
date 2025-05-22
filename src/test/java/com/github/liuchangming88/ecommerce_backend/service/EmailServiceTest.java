@@ -24,7 +24,7 @@ public class EmailServiceTest {
     private EmailService emailService;
 
     @Test
-    public void testSendVerificationEmail() {
+    public void sendVerificationEmail_correctlySendsEmail() {
         // Arrange
         VerificationToken token = new VerificationToken();
         LocalUser user = new LocalUser();

@@ -22,7 +22,7 @@ public class EncryptionServiceTest {
     }
 
     @Test
-    public void testEncryptAndVerifyPassword() {
+    public void encryptPasswordVerifyPassword_correctPassword_returnsTrue() {
         String rawPassword = "mySecretPassword";
         String hashedPassword = encryptionService.encryptPassword(rawPassword);
 
@@ -32,7 +32,7 @@ public class EncryptionServiceTest {
     }
 
     @Test
-    public void testVerifyPasswordWithIncorrectPassword() {
+    public void encryptPasswordVerifyPassword_wrongPassword_returnsFalse() {
         String rawPassword = "mySecretPassword";
         String wrongPassword = "wrongPassword";
         String hashedPassword = encryptionService.encryptPassword(rawPassword);
