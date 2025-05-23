@@ -108,7 +108,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({InvalidVerificationTokenException.class, VerificationTokenExpiredException.class, UserAlreadyVerifiedException.class})
     public ErrorResponse handleTokenVerificationExceptions (RuntimeException ex, HttpServletRequest request) {
-        logger.error("The user's verification token is expired or invalid: {}", ex.getMessage());
+        logger.error("The user's verification token is expired or invalid, or the user is already verified: {}", ex.getMessage());
         return new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -121,8 +121,8 @@ public class GlobalExceptionHandler {
 
     // For jwt token
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ExceptionHandler({JWTVerificationException.class})
-    public ErrorResponse handleJwtVerificationExceptions (RuntimeException ex, HttpServletRequest request) {
+    @ExceptionHandler(JWTVerificationException.class)
+    public ErrorResponse handleJwtVerificationExceptions (JWTVerificationException ex, HttpServletRequest request) {
         logger.error("The JWT token was rejected: {}", ex.getMessage());
         return new ErrorResponse(
                 LocalDateTime.now(),

@@ -3,7 +3,7 @@ package com.github.liuchangming88.ecommerce_backend.security;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.github.liuchangming88.ecommerce_backend.beans.SecurityConstants;
+import com.github.liuchangming88.ecommerce_backend.configuration.SecurityConstants;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
 import com.github.liuchangming88.ecommerce_backend.service.JwtService;

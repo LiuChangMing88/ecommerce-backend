@@ -1,6 +1,6 @@
 package com.github.liuchangming88.ecommerce_backend.security;
 
-import com.github.liuchangming88.ecommerce_backend.beans.SecurityConstants;
+import com.github.liuchangming88.ecommerce_backend.configuration.SecurityConstants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

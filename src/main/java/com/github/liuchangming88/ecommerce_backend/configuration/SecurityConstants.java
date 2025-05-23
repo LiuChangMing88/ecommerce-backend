@@ -1,4 +1,4 @@
-package com.github.liuchangming88.ecommerce_backend.beans;
+package com.github.liuchangming88.ecommerce_backend.configuration;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;

@@ -4,7 +4,7 @@ package com.github.liuchangming88.ecommerce_backend.service;
 import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
-import com.github.liuchangming88.ecommerce_backend.beans.MapperConfig;
+import com.github.liuchangming88.ecommerce_backend.configuration.MapperConfig;
 import com.github.liuchangming88.ecommerce_backend.exception.*;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;

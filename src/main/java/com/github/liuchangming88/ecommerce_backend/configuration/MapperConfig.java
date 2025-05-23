@@ -1,4 +1,4 @@
-package com.github.liuchangming88.ecommerce_backend.beans;
+package com.github.liuchangming88.ecommerce_backend.configuration;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.OrderQuantitiesResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
