@@ -153,7 +153,7 @@ public class AuthenticationControllerTest {
         VerificationToken expiredToken = new VerificationToken();
         expiredToken.setToken("expired-token");
         expiredToken.setLocalUser(user);
-        expiredToken.setCreatedAt(LocalDateTime.now().minusSeconds(86400 + 1));
+        expiredToken.setExpireAt(LocalDateTime.now());
         verificationTokenRepository.save(expiredToken);
 
         // Perform the verification request with the expired token

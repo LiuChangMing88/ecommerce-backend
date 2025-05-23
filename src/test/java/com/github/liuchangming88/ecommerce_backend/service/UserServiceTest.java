@@ -54,7 +54,6 @@ public class UserServiceTest {
         // Since this mapper has custom mappings, use the real one to preserve configurations
         ModelMapper modelMapper = new MapperConfig().modelMapper();
         ReflectionTestUtils.setField(userService, "modelMapper", modelMapper);
-        ReflectionTestUtils.setField(userService, "emailVerificationTokenExpiryTime", 86400);
     }
 
     @Test
@@ -143,7 +142,7 @@ public class UserServiceTest {
 
         // Create a VerificationToken with a recent creation time
         VerificationToken verificationToken = new VerificationToken();
-        verificationToken.setCreatedAt(LocalDateTime.now());
+        verificationToken.setExpireAt(LocalDateTime.now().plusSeconds(86400));
 
         // Create a LocalUser with unverified email and associated verification token
         LocalUser localUser = new LocalUser();
@@ -183,7 +182,7 @@ public class UserServiceTest {
         localUser.setIsEmailVerified(false);
 
         VerificationToken oldToken = new VerificationToken();
-        oldToken.setCreatedAt(LocalDateTime.now().minusSeconds(emailVerificationTokenExpiryTime + 1));
+        oldToken.setExpireAt(LocalDateTime.now().minusSeconds(1));
         localUser.setVerificationToken(oldToken);
 
         // Stub repository to return the LocalUser
@@ -327,7 +326,7 @@ public class UserServiceTest {
         // Create an expired VerificationToken associated with the LocalUser
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setLocalUser(localUser);
-        verificationToken.setCreatedAt(LocalDateTime.now().minusSeconds(emailVerificationTokenExpiryTime + 1));
+        verificationToken.setExpireAt(LocalDateTime.now().minusSeconds(1));
 
         // Stub repository to return the VerificationToken
         when(verificationTokenRepository.findByToken(eq(token)))
@@ -352,7 +351,7 @@ public class UserServiceTest {
         // Create a valid VerificationToken associated with the LocalUser
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setLocalUser(localUser);
-        verificationToken.setCreatedAt(LocalDateTime.now());
+        verificationToken.setExpireAt(LocalDateTime.now().plusSeconds(86400));
 
         // Stub repository to return the VerificationToken
         when(verificationTokenRepository.findByToken(eq(token)))
