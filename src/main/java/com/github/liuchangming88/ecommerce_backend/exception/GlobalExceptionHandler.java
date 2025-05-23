@@ -1,12 +1,10 @@
 package com.github.liuchangming88.ecommerce_backend.exception;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.github.liuchangming88.ecommerce_backend.api.model.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.angus.mail.iap.ConnectionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
 import org.springframework.security.core.AuthenticationException;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.net.ConnectException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +51,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // Constraints for fields (password, username, email...) when logging in
+    // Constraints for fields (password, username, email...)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ErrorResponse handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -104,15 +101,30 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // For when the user verifies the account but fails because of the token
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler({InvalidVerificationTokenException.class, VerificationTokenExpiredException.class, UserAlreadyVerifiedException.class})
+    // For exceptions related to tokens (verification, password reset)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler({InvalidTokenException.class, TokenExpiredException.class})
     public ErrorResponse handleTokenVerificationExceptions (RuntimeException ex, HttpServletRequest request) {
-        logger.error("The user's verification token is expired or invalid, or the user is already verified: {}", ex.getMessage());
+        logger.error("The user's verification token is expired or invalid: {}", ex.getMessage());
         return new ErrorResponse(
                 LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Bad request",
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    // Conflict for when user is already email verified but still tried to verify
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(UserAlreadyVerifiedException.class)
+    public ErrorResponse handleUserAlreadyVerifiedException (RuntimeException ex, HttpServletRequest request) {
+        logger.error("The user is already verified: {}", ex.getMessage());
+        return new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
                 ex.getMessage(),
                 request.getRequestURI(),
                 null
