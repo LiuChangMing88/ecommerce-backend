@@ -24,8 +24,6 @@ public class UserService {
     private final VerificationTokenService verificationTokenService;
     private final EmailService emailService;
 
-    private final int emailVerificationTokenExpiryTime = 86400;
-
     public UserService(LocalUserRepository localUserRepository, EncryptionService encryptionService, JwtService jwtService, ModelMapper modelMapper, VerificationTokenService verificationTokenService, EmailService emailService, VerificationTokenRepository verificationTokenRepository) {
         this.localUserRepository = localUserRepository;
         this.encryptionService = encryptionService;
@@ -87,7 +85,7 @@ public class UserService {
             // If not email verified, check the most recent verification email sent, resend if it's more than 24 hours (or if the user has no verification token)
             VerificationToken verificationToken = localUser.getVerificationToken();
             boolean resend = (verificationToken == null)
-                    || verificationToken.getCreatedAt().plusSeconds(emailVerificationTokenExpiryTime).isBefore(LocalDateTime.now());
+                    || verificationToken.getExpireAt().isBefore(LocalDateTime.now());
             if (resend) {
                 // Create new verification token
                 VerificationToken newVerificationToken = verificationTokenService.createVerificationToken(localUser);
@@ -120,7 +118,7 @@ public class UserService {
         }
 
         // Check expiry
-        if (verificationToken.getCreatedAt().plusSeconds(emailVerificationTokenExpiryTime).isBefore(LocalDateTime.now()))
+        if (verificationToken.getExpireAt().isBefore(LocalDateTime.now()))
             throw new VerificationTokenExpiredException("The token has expired");
 
         // Verify user

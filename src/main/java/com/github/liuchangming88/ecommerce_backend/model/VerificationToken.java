@@ -23,8 +23,8 @@ public class VerificationToken {
     @Column(name = "token", nullable = false, unique = true)
     private String token;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "expire_at", nullable = false)
+    private LocalDateTime expireAt;
 
     @OneToOne(optional = false, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinColumn(name = "local_user_id", nullable = false)
