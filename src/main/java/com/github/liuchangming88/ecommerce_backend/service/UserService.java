@@ -21,15 +21,15 @@ public class UserService {
     private final EncryptionService encryptionService;
     private final JwtService jwtService;
     private final ModelMapper modelMapper;
-    private final VerificationTokenService verificationTokenService;
+    private final TokenService tokenService;
     private final EmailService emailService;
 
-    public UserService(LocalUserRepository localUserRepository, EncryptionService encryptionService, JwtService jwtService, ModelMapper modelMapper, VerificationTokenService verificationTokenService, EmailService emailService, VerificationTokenRepository verificationTokenRepository) {
+    public UserService(LocalUserRepository localUserRepository, EncryptionService encryptionService, JwtService jwtService, ModelMapper modelMapper, TokenService tokenService, EmailService emailService, VerificationTokenRepository verificationTokenRepository) {
         this.localUserRepository = localUserRepository;
         this.encryptionService = encryptionService;
         this.jwtService = jwtService;
         this.modelMapper = modelMapper;
-        this.verificationTokenService = verificationTokenService;
+        this.tokenService = tokenService;
         this.emailService = emailService;
         this.verificationTokenRepository = verificationTokenRepository;
     }
@@ -54,7 +54,7 @@ public class UserService {
         localUser.setPassword(encryptionService.encryptPassword(registrationRequest.getPassword()));
 
         // Create the email verification token
-        VerificationToken verificationToken = verificationTokenService.createVerificationToken(localUser);
+        VerificationToken verificationToken = tokenService.createVerificationToken(localUser);
 
         // Send the email to the user to prompt verification
         emailService.sendVerificationEmail(verificationToken);
@@ -88,7 +88,7 @@ public class UserService {
                     || verificationToken.getExpireAt().isBefore(LocalDateTime.now());
             if (resend) {
                 // Create new verification token
-                VerificationToken newVerificationToken = verificationTokenService.createVerificationToken(localUser);
+                VerificationToken newVerificationToken = tokenService.createVerificationToken(localUser);
                 emailService.sendVerificationEmail(newVerificationToken);
                 localUser.setVerificationToken(newVerificationToken);
                 verificationTokenRepository.save(newVerificationToken);

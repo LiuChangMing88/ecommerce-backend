@@ -39,15 +39,13 @@ public class UserServiceTest {
     @Mock
     private JwtService jwtService;
     @Mock
-    private VerificationTokenService verificationTokenService;
+    private TokenService tokenService;
     @Mock
     private EmailService emailService;
 
     // Service class under test
     @InjectMocks
     private UserService userService;
-
-    private final int emailVerificationTokenExpiryTime = 86400;
 
     @BeforeEach
     void setUp() {
@@ -98,7 +96,7 @@ public class UserServiceTest {
         when(encryptionService.encryptPassword(request.getPassword()))
                 .thenReturn("EncryptedPassword");
         VerificationToken mockToken = mock(VerificationToken.class);
-        when(verificationTokenService.createVerificationToken(any(LocalUser.class)))
+        when(tokenService.createVerificationToken(any(LocalUser.class)))
                 .thenReturn(mockToken);
 
         // Assert the return
@@ -195,7 +193,7 @@ public class UserServiceTest {
 
         // Stub verificationTokenService to return a new token
         VerificationToken newToken = new VerificationToken();
-        when(verificationTokenService.createVerificationToken(eq(localUser)))
+        when(tokenService.createVerificationToken(eq(localUser)))
                 .thenReturn(newToken);
 
         // Assert that UserNotVerifiedException is thrown with appropriate message
@@ -228,7 +226,7 @@ public class UserServiceTest {
 
         // Stub verificationTokenService to return a new token
         VerificationToken newToken = new VerificationToken();
-        when(verificationTokenService.createVerificationToken(eq(localUser)))
+        when(tokenService.createVerificationToken(eq(localUser)))
                 .thenReturn(newToken);
 
         // Assert that UserNotVerifiedException is thrown with appropriate message

@@ -45,5 +45,6 @@ public class LocalUser {
     @OneToOne(mappedBy = "localUser", cascade = CascadeType.ALL)
     private VerificationToken verificationToken;
 
-
+    @OneToOne(mappedBy = "localUser", cascade = CascadeType.ALL)
+    private PasswordResetToken passwordResetToken;
 }

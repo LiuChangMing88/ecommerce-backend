@@ -13,10 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class VerificationServiceTest {
@@ -24,11 +20,11 @@ public class VerificationServiceTest {
     private VerificationTokenRepository verificationTokenRepository;
 
     @InjectMocks
-    private VerificationTokenService verificationTokenService;
+    private TokenService tokenService;
 
     @BeforeEach
     public void setUp() {
-        ReflectionTestUtils.setField(verificationTokenService, "emailExpiryInSeconds", 86400);
+        ReflectionTestUtils.setField(tokenService, "emailExpiryInSeconds", 86400);
     }
 
     @Test
@@ -37,7 +33,7 @@ public class VerificationServiceTest {
         LocalUser localUser = new LocalUser();
 
         // Execute
-        VerificationToken verificationToken = verificationTokenService.createVerificationToken(localUser);
+        VerificationToken verificationToken = tokenService.createVerificationToken(localUser);
 
         // Assert
         Assertions.assertEquals(localUser, verificationToken.getLocalUser());
