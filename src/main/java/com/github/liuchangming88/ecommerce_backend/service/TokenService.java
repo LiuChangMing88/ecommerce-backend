@@ -1,6 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +15,11 @@ import java.util.Base64;
 public class TokenService {
     VerificationTokenRepository verificationTokenRepository;
 
-    @Value("${email.expiry.in.seconds}")
-    private int emailExpiryInSeconds;
+    @Value("${email.verification.expiry.in.seconds}")
+    private int emailVerificationExpiryInSeconds;
+
+    @Value("${password.reset.expiry.in.seconds}")
+    private int passwordResetExpiryInSeconds;
 
     public TokenService(VerificationTokenRepository verificationTokenRepository) {
         this.verificationTokenRepository = verificationTokenRepository;
@@ -28,12 +32,21 @@ public class TokenService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
     }
 
-    public VerificationToken createVerificationToken(LocalUser localUser) {
+    public VerificationToken createVerificationToken (LocalUser localUser) {
         String token = generateToken();
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
-        verificationToken.setExpireAt(LocalDateTime.now().plusSeconds(emailExpiryInSeconds));
+        verificationToken.setExpireAt(LocalDateTime.now().plusSeconds(emailVerificationExpiryInSeconds));
         verificationToken.setLocalUser(localUser);
         return verificationToken;
+    }
+
+    public PasswordResetToken createPasswordResetToken (LocalUser localUser) {
+        String token = generateToken();
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setToken(token);
+        passwordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(passwordResetExpiryInSeconds));
+        passwordResetToken.setLocalUser(localUser);
+        return passwordResetToken;
     }
 }
