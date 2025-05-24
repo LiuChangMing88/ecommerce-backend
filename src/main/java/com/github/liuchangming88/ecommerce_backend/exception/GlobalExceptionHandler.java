@@ -105,7 +105,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler({InvalidTokenException.class, TokenExpiredException.class})
     public ErrorResponse handleTokenVerificationExceptions (RuntimeException ex, HttpServletRequest request) {
-        logger.error("The user's verification token is expired or invalid: {}", ex.getMessage());
+        logger.error("The token is expired or invalid: {}", ex.getMessage());
         return new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),

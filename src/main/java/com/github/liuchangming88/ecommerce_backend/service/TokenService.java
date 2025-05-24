@@ -25,12 +25,20 @@ public class TokenService {
         this.verificationTokenRepository = verificationTokenRepository;
     }
 
+    /**
+     * Generates a secure random token with 256 bits using SecureRandom
+     */
+
     private static String generateToken() {
         SecureRandom secureRandom = new SecureRandom();
         byte[] tokenBytes = new byte[32]; // 256 bits
         secureRandom.nextBytes(tokenBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
     }
+
+    /**
+     * This is for email verification
+     */
 
     public VerificationToken createVerificationToken (LocalUser localUser) {
         String token = generateToken();
@@ -40,6 +48,10 @@ public class TokenService {
         verificationToken.setLocalUser(localUser);
         return verificationToken;
     }
+
+    /**
+     * This is for password resetting
+     */
 
     public PasswordResetToken createPasswordResetToken (LocalUser localUser) {
         String token = generateToken();

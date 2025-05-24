@@ -40,6 +40,10 @@ public class UserService {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
+    /**
+     * Handles user registration and logging in
+     */
+
 
     public RegistrationResponse registerUser(RegistrationRequest registrationRequest) {
         // Check if the unique attributes already exist in the database
@@ -105,6 +109,10 @@ public class UserService {
         return jwtService.generateJwt(localUser);
     }
 
+    /**
+     * Handles user verification
+     */
+
     public void verifyUser(String token) {
         // Retrieve verification token
         Optional<VerificationToken> opVerificationToken = verificationTokenRepository.findByToken(token);
@@ -135,6 +143,10 @@ public class UserService {
         verificationTokenRepository.delete(verificationToken);
     }
 
+    /**
+     * Handles password resetting
+     */
+
     public void sendResetPasswordEmail(String email) {
         // Retrieve user
         Optional<LocalUser> retrievedUser = localUserRepository.findByEmailIgnoreCase(email);
@@ -142,6 +154,12 @@ public class UserService {
             return;
 
         LocalUser extractedUser = retrievedUser.get();
+        // Check if the last token is expired (if it has, send a new token. If it hasn't expired, don't send)
+        // If it hasn't expired return
+        if (extractedUser.getPasswordResetToken() != null
+            && extractedUser.getPasswordResetToken().getExpireAt().isAfter(LocalDateTime.now()))
+            return;
+
         // Create token
         PasswordResetToken passwordResetToken = tokenService.createPasswordResetToken(extractedUser);
 

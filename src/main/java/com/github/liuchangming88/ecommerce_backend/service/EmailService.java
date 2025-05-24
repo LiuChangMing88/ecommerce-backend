@@ -27,6 +27,10 @@ public class EmailService {
         return simpleMailMessage;
     }
 
+    /**
+     * Handles sending email to a client
+     */
+
     public void sendVerificationEmail (VerificationToken verificationToken) {
         SimpleMailMessage simpleMailMessage = createMailMessage();
         simpleMailMessage.setTo(verificationToken.getLocalUser().getEmail());

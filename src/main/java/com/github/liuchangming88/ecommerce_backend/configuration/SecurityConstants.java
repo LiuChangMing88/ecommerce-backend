@@ -20,7 +20,7 @@ public class SecurityConstants {
             "/error"
     };
 
-    // Convert to RequestMatchers for use in SecurityFilterChain
+    // Convert to RequestMatchers for use elsewhere
     public static RequestMatcher[] getPublicRequestMatchers() {
         return Arrays.stream(PUBLIC_ENDPOINTS)
                 .map(AntPathRequestMatcher::new)
