@@ -1,12 +1,18 @@
 package com.github.liuchangming88.ecommerce_backend.api.controller.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.liuchangming88.ecommerce_backend.api.model.ForgotPasswordRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest;
+import com.github.liuchangming88.ecommerce_backend.api.model.ResetPasswordRequest;
+import com.github.liuchangming88.ecommerce_backend.exception.*;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
+import com.github.liuchangming88.ecommerce_backend.model.repository.PasswordResetTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
+import com.github.liuchangming88.ecommerce_backend.service.EncryptionService;
 import com.github.liuchangming88.ecommerce_backend.util.TestDataUtil;
 import com.icegreen.greenmail.configuration.GreenMailConfiguration;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
@@ -20,10 +26,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,9 +53,14 @@ public class AuthenticationControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-
     @Autowired
     private VerificationTokenRepository verificationTokenRepository;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    private EncryptionService encryptionService;
 
     @Autowired
     private LocalUserRepository localUserRepository;
@@ -61,7 +74,8 @@ public class AuthenticationControllerTest {
                 MockMvcRequestBuilders.post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registrationRequest))
-        ).andExpect(status().isConflict());
+        ).andExpect(status().isConflict())
+                .andExpect(result -> assertInstanceOf(UserAlreadyExistsException.class, result.getResolvedException()));
     }
 
     @Test
@@ -87,7 +101,8 @@ public class AuthenticationControllerTest {
                 MockMvcRequestBuilders.post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest))
-        ).andExpect(status().isBadRequest());
+        ).andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(IncorrectPasswordException.class, result.getResolvedException()));
     }
 
     @Test
@@ -98,7 +113,8 @@ public class AuthenticationControllerTest {
                 MockMvcRequestBuilders.post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest))
-        ).andExpect(status().isForbidden());
+        ).andExpect(status().isForbidden())
+                .andExpect(result -> assertInstanceOf(UserNotVerifiedException.class, result.getResolvedException()));
     }
 
     @Test
@@ -114,11 +130,12 @@ public class AuthenticationControllerTest {
     }
 
     @Test
-    void verifyUser_invalidToken_returns400() throws Exception {
+    void verifyUser_invalidToken_returns401() throws Exception {
         mockMvc.perform(
                 MockMvcRequestBuilders.get("/auth/verify")
                         .param("token", "Gibberish")
-        ).andExpect(status().isBadRequest());
+        ).andExpect(status().isUnauthorized())
+                .andExpect(result -> assertInstanceOf(InvalidTokenException.class, result.getResolvedException()));
     }
 
     @Test
@@ -144,7 +161,7 @@ public class AuthenticationControllerTest {
     }
 
     @Test
-    void verifyUser_expiredToken_returns400() throws Exception {
+    void verifyUser_expiredToken_returns401() throws Exception {
         // Retrieve user B
         Optional<LocalUser> opUser = localUserRepository.findByUsernameIgnoreCase("usernameB");
         LocalUser user = opUser.get();
@@ -160,7 +177,228 @@ public class AuthenticationControllerTest {
         mockMvc.perform(
                         MockMvcRequestBuilders.get("/auth/verify")
                                 .param("token", "expired-token")
+                ).andExpect(status().isUnauthorized())
+                .andExpect(result -> assertInstanceOf(TokenExpiredException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void forgotPassword_invalidEmail_returns400() throws Exception {
+        // Create a request with an invalid email
+        ForgotPasswordRequest forgotPasswordRequest = new ForgotPasswordRequest();
+        forgotPasswordRequest.setEmail("InvalidEmail");
+
+        mockMvc.perform(
+                MockMvcRequestBuilders.post("/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(forgotPasswordRequest))
+        ).andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void forgotPassword_validEmailButDoesNotExist_returns200() throws Exception {
+        // Create a request with a valid
+        ForgotPasswordRequest forgotPasswordRequest = new ForgotPasswordRequest();
+        forgotPasswordRequest.setEmail("GibberishEmail@gmail.com");
+
+        mockMvc.perform(
+                MockMvcRequestBuilders.post("/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(forgotPasswordRequest))
+        ).andExpect(status().isOk());
+    }
+
+    @Test
+    void forgotPassword_validAndExistingEmail_returns200() throws Exception {
+        // Create a request with a valid and existing email (this email exists in the test database)
+        ForgotPasswordRequest forgotPasswordRequest = new ForgotPasswordRequest();
+        forgotPasswordRequest.setEmail("emailA@gmail.com");
+
+        mockMvc.perform(
+                MockMvcRequestBuilders.post("/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(forgotPasswordRequest))
+        ).andExpect(status().isOk());
+    }
+
+    @Test
+    void validateResetToken_invalidToken_returns401() throws Exception {
+        String token = "InvalidToken";
+
+        mockMvc.perform(
+                MockMvcRequestBuilders.get("/auth/reset-password")
+                        .param("token" , token)
+        ).andExpect(status().isUnauthorized())
+                .andExpect(result -> assertInstanceOf(InvalidTokenException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void validateResetToken_expiredToken_returns401() throws Exception {
+        // This user is present in the database
+        LocalUser userA = localUserRepository.findByUsernameIgnoreCase("usernameA").get();
+
+        // Create an expired token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setExpireAt(LocalDateTime.now().minusSeconds(1));
+        passwordResetToken.setToken("ExpiredToken");
+        passwordResetToken.setLocalUser(userA);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        // Perform
+        mockMvc.perform(
+                MockMvcRequestBuilders.get("/auth/reset-password")
+                        .param("token" , passwordResetToken.getToken())
+        ).andExpect(status().isUnauthorized())
+                .andExpect(result -> assertInstanceOf(TokenExpiredException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void validateResetToken_validUnexpiredToken_returns200() throws Exception {
+        // This user is present in the database
+        LocalUser userA = localUserRepository.findByUsernameIgnoreCase("usernameA").get();
+
+        // Create an unexpired token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        passwordResetToken.setToken("ValidUnexpiredToken");
+        passwordResetToken.setLocalUser(userA);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        // Perform
+        mockMvc.perform(
+                        MockMvcRequestBuilders.get("/auth/reset-password")
+                                .param("token" , passwordResetToken.getToken())
+                ).andExpect(status().isOk());
+    }
+
+    @Test
+    void resetPassword_invalidPassword_returns400() throws Exception {
+        ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
+        // Password must be between 8-16 characters, has at least 1 uppercase letter, 1 lowercase letter and 1 number
+        resetPasswordRequest.setPassword("invalid password");
+        resetPasswordRequest.setConfirmPassword("invalid password");
+
+        // This user is present in the database
+        LocalUser userA = localUserRepository.findByUsernameIgnoreCase("usernameA").get();
+
+        // Create an unexpired token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        passwordResetToken.setToken("ValidUnexpiredToken");
+        passwordResetToken.setLocalUser(userA);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        // Perform
+        mockMvc.perform(
+                MockMvcRequestBuilders.post("/auth/reset-password")
+                        .param("token" , passwordResetToken.getToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetPasswordRequest))
+        ).andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void resetPassword_PasswordsDoNotMatch_returns400() throws Exception {
+        ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
+        // Password must be between 8-16 characters, has at least 1 uppercase letter, 1 lowercase letter and 1 number
+        resetPasswordRequest.setPassword("ValidPassword123");
+        resetPasswordRequest.setConfirmPassword("ValidPassword12");
+
+        // This user is present in the database
+        LocalUser userA = localUserRepository.findByUsernameIgnoreCase("usernameA").get();
+
+        // Create an unexpired token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        passwordResetToken.setToken("ValidUnexpiredToken");
+        passwordResetToken.setLocalUser(userA);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        // Perform
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/auth/reset-password")
+                                .param("token" , passwordResetToken.getToken())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(resetPasswordRequest))
                 ).andExpect(status().isBadRequest())
-                .andExpect(status().isBadRequest());
+                .andExpect(result -> assertInstanceOf(PasswordsDoNotMatchException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void resetPassword_invalidToken_returns401() throws Exception {
+        ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
+        // Password must be between 8-16 characters, has at least 1 uppercase letter, 1 lowercase letter and 1 number
+        resetPasswordRequest.setPassword("ValidPassword123");
+        resetPasswordRequest.setConfirmPassword("ValidPassword123");
+
+        String token = "Invalid token";
+
+        // Perform
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/auth/reset-password")
+                                .param("token" , token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(resetPasswordRequest))
+                ).andExpect(status().isUnauthorized())
+                .andExpect(result -> assertInstanceOf(InvalidTokenException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void resetPassword_expiredToken_returns401() throws Exception {
+        ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
+        // Password must be between 8-16 characters, has at least 1 uppercase letter, 1 lowercase letter and 1 number
+        resetPasswordRequest.setPassword("ValidPassword123");
+        resetPasswordRequest.setConfirmPassword("ValidPassword123");
+
+        // This user is present in the database
+        LocalUser userA = localUserRepository.findByUsernameIgnoreCase("usernameA").get();
+
+        // Create an unexpired token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setExpireAt(LocalDateTime.now().minusSeconds(1));
+        passwordResetToken.setToken("ExpiredToken");
+        passwordResetToken.setLocalUser(userA);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        // Perform
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/auth/reset-password")
+                                .param("token" , passwordResetToken.getToken())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(resetPasswordRequest))
+                ).andExpect(status().isUnauthorized())
+                .andExpect(result -> assertInstanceOf(TokenExpiredException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void resetPassword_validTokenAndMatchingPassword_returns200AndUpdatePassword() throws Exception {
+        ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
+        // Password must be between 8-16 characters, has at least 1 uppercase letter, 1 lowercase letter and 1 number
+        resetPasswordRequest.setPassword("ValidPassword123");
+        resetPasswordRequest.setConfirmPassword("ValidPassword123");
+
+        // This user is present in the database
+        LocalUser userA = localUserRepository.findByUsernameIgnoreCase("usernameA").get();
+
+        // Create an unexpired token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        passwordResetToken.setToken("ValidUnexpiredToken");
+        passwordResetToken.setLocalUser(userA);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        // Perform
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/auth/reset-password")
+                                .param("token" , passwordResetToken.getToken())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(resetPasswordRequest))
+                ).andExpect(status().isOk());
+
+        userA = localUserRepository.findByUsernameIgnoreCase("usernameA").get();
+
+        // Assert
+        assertTrue(encryptionService.verifyPassword("ValidPassword123", userA.getPassword()));
     }
 }

@@ -1,6 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
 import org.junit.jupiter.api.Assertions;
@@ -15,7 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 
 @ExtendWith(MockitoExtension.class)
-public class VerificationServiceTest {
+public class TokenServiceTest {
     @Mock
     private VerificationTokenRepository verificationTokenRepository;
 
@@ -24,7 +25,8 @@ public class VerificationServiceTest {
 
     @BeforeEach
     public void setUp() {
-        ReflectionTestUtils.setField(tokenService, "emailExpiryInSeconds", 86400);
+        ReflectionTestUtils.setField(tokenService, "emailVerificationExpiryInSeconds", 86400);
+        ReflectionTestUtils.setField(tokenService, "passwordResetExpiryInSeconds", 900);
     }
 
     @Test
@@ -38,6 +40,22 @@ public class VerificationServiceTest {
         // Assert
         Assertions.assertEquals(localUser, verificationToken.getLocalUser());
         Assertions.assertNotNull(verificationToken.getToken());
+        Assertions.assertEquals(43, verificationToken.getToken().length());
         Assertions.assertFalse(verificationToken.getExpireAt().isBefore(LocalDateTime.now()));
+    }
+
+    @Test
+    public void createPasswordResetToken_returnsPasswordResetToken() {
+        // Arrange
+        LocalUser localUser = new LocalUser();
+
+        // Execute
+        PasswordResetToken passwordResetToken = tokenService.createPasswordResetToken(localUser);
+
+        // Assert
+        Assertions.assertEquals(localUser, passwordResetToken.getLocalUser());
+        Assertions.assertNotNull(passwordResetToken.getToken());
+        Assertions.assertEquals(43, passwordResetToken.getToken().length());
+        Assertions.assertFalse(passwordResetToken.getExpireAt().isBefore(LocalDateTime.now()));
     }
 }

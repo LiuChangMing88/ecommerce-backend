@@ -1,6 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,22 @@ public class EmailServiceTest {
 
         // Act
         emailService.sendVerificationEmail(token);
+
+        // Assert
+        verify(javaMailSender, times(1)).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    public void sendPasswordResetEmail_correctlySendsEmail() {
+        // Arrange
+        PasswordResetToken token = new PasswordResetToken();
+        LocalUser user = new LocalUser();
+        user.setEmail("user@example.com");
+        token.setLocalUser(user);
+        token.setToken("sample-token");
+
+        // Act
+        emailService.sendPasswordResetEmail(token);
 
         // Assert
         verify(javaMailSender, times(1)).send(any(SimpleMailMessage.class));
