@@ -14,6 +14,8 @@ public class SecurityConstants {
             "/auth/login",
             "/auth/register",
             "/auth/verify",
+            "/auth/forgot-password",
+            "/auth/reset-password",
             "/products",
             "/error"
     };
