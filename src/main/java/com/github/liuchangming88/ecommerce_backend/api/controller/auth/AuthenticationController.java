@@ -1,9 +1,6 @@
 package com.github.liuchangming88.ecommerce_backend.api.controller.auth;
 
-import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
-import com.github.liuchangming88.ecommerce_backend.api.model.LoginResponse;
-import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest;
-import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
+import com.github.liuchangming88.ecommerce_backend.api.model.*;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.service.UserService;
 import jakarta.validation.Valid;
@@ -54,5 +51,23 @@ public class AuthenticationController {
                         ""
                 ), HttpStatus.OK
         );
+    }
+
+    @PostMapping(path = "/forgot-password")
+    public ResponseEntity<String> forgotPassword (@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        userService.sendResetPasswordEmail(forgotPasswordRequest.getEmail());
+        return new ResponseEntity<>("If the email is registered, a reset link will be sent to that email.", HttpStatus.OK);
+    }
+
+    @GetMapping(path = "/reset-password")
+    public ResponseEntity<String> validateResetToken (@RequestParam String token) {
+        userService.validateResetToken(token);
+        return new ResponseEntity<>("The token is valid", HttpStatus.OK);
+    }
+
+    @PostMapping(path = "/reset-password")
+    public ResponseEntity<String> resetPassword (@RequestParam String token, @Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        userService.resetPassword(token, resetPasswordRequest.getPassword(), resetPasswordRequest.getConfirmPassword());
+        return new ResponseEntity<>("Password has been reset successfully", HttpStatus.OK);
     }
 }

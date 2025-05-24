@@ -5,8 +5,10 @@ import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest
 import com.github.liuchangming88.ecommerce_backend.exception.*;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
+import com.github.liuchangming88.ecommerce_backend.model.repository.PasswordResetTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -18,21 +20,29 @@ import java.util.Optional;
 public class UserService {
     private final LocalUserRepository localUserRepository;
     private final VerificationTokenRepository verificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EncryptionService encryptionService;
     private final JwtService jwtService;
     private final ModelMapper modelMapper;
-    private final VerificationTokenService verificationTokenService;
+    private final TokenService tokenService;
     private final EmailService emailService;
 
-    public UserService(LocalUserRepository localUserRepository, EncryptionService encryptionService, JwtService jwtService, ModelMapper modelMapper, VerificationTokenService verificationTokenService, EmailService emailService, VerificationTokenRepository verificationTokenRepository) {
+    public UserService(LocalUserRepository localUserRepository, EncryptionService encryptionService, JwtService jwtService,
+                       ModelMapper modelMapper, TokenService tokenService, EmailService emailService,
+                       VerificationTokenRepository verificationTokenRepository, PasswordResetTokenRepository passwordResetTokenRepository) {
         this.localUserRepository = localUserRepository;
         this.encryptionService = encryptionService;
         this.jwtService = jwtService;
         this.modelMapper = modelMapper;
-        this.verificationTokenService = verificationTokenService;
+        this.tokenService = tokenService;
         this.emailService = emailService;
         this.verificationTokenRepository = verificationTokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
+
+    /**
+     * Handles user registration and logging in
+     */
 
 
     public RegistrationResponse registerUser(RegistrationRequest registrationRequest) {
@@ -54,7 +64,7 @@ public class UserService {
         localUser.setPassword(encryptionService.encryptPassword(registrationRequest.getPassword()));
 
         // Create the email verification token
-        VerificationToken verificationToken = verificationTokenService.createVerificationToken(localUser);
+        VerificationToken verificationToken = tokenService.createVerificationToken(localUser);
 
         // Send the email to the user to prompt verification
         emailService.sendVerificationEmail(verificationToken);
@@ -88,7 +98,7 @@ public class UserService {
                     || verificationToken.getExpireAt().isBefore(LocalDateTime.now());
             if (resend) {
                 // Create new verification token
-                VerificationToken newVerificationToken = verificationTokenService.createVerificationToken(localUser);
+                VerificationToken newVerificationToken = tokenService.createVerificationToken(localUser);
                 emailService.sendVerificationEmail(newVerificationToken);
                 localUser.setVerificationToken(newVerificationToken);
                 verificationTokenRepository.save(newVerificationToken);
@@ -99,12 +109,16 @@ public class UserService {
         return jwtService.generateJwt(localUser);
     }
 
+    /**
+     * Handles user verification
+     */
+
     public void verifyUser(String token) {
         // Retrieve verification token
         Optional<VerificationToken> opVerificationToken = verificationTokenRepository.findByToken(token);
         // If invalid token
         if (opVerificationToken.isEmpty())
-            throw new InvalidVerificationTokenException("The token is invalid");
+            throw new InvalidTokenException("The token is invalid");
 
         VerificationToken verificationToken = opVerificationToken.get();
 
@@ -119,7 +133,7 @@ public class UserService {
 
         // Check expiry
         if (verificationToken.getExpireAt().isBefore(LocalDateTime.now()))
-            throw new VerificationTokenExpiredException("The token has expired");
+            throw new TokenExpiredException("The token has expired");
 
         // Verify user
         LocalUser localUser = verificationToken.getLocalUser();
@@ -127,5 +141,62 @@ public class UserService {
         localUser.setVerificationToken(null);
         localUserRepository.save(localUser);
         verificationTokenRepository.delete(verificationToken);
+    }
+
+    /**
+     * Handles password resetting
+     */
+
+    public void sendResetPasswordEmail(String email) {
+        // Retrieve user
+        Optional<LocalUser> retrievedUser = localUserRepository.findByEmailIgnoreCase(email);
+        if (retrievedUser.isEmpty())
+            return;
+
+        LocalUser extractedUser = retrievedUser.get();
+        // Check if the last token is expired (if it has, send a new token. If it hasn't expired, don't send)
+        // If it hasn't expired return
+        if (extractedUser.getPasswordResetToken() != null
+            && extractedUser.getPasswordResetToken().getExpireAt().isAfter(LocalDateTime.now()))
+            return;
+
+        // Create token
+        PasswordResetToken passwordResetToken = tokenService.createPasswordResetToken(extractedUser);
+
+        // Send email and save token
+        emailService.sendPasswordResetEmail(passwordResetToken);
+        passwordResetTokenRepository.save(passwordResetToken);
+    }
+
+    public PasswordResetToken validateResetToken(String token) {
+        // Retrieve token
+        Optional<PasswordResetToken> retrievedToken = passwordResetTokenRepository.findByToken(token);
+
+        // Check validity
+        if (retrievedToken.isEmpty())
+            throw new InvalidTokenException("The token is invalid");
+        PasswordResetToken extractedToken = retrievedToken.get();
+
+        // Check expiry
+        if (extractedToken.getExpireAt().isBefore(LocalDateTime.now()))
+            throw new TokenExpiredException("The token has expired");
+        return extractedToken;
+    }
+
+    public void resetPassword(String token, String newPassword, String confirmNewPassword) {
+        // Validate
+        if (!newPassword.equals(confirmNewPassword))
+            throw new PasswordsDoNotMatchException("The passwords do not match");
+        PasswordResetToken extractedToken = validateResetToken(token);
+
+        // Reset password
+        LocalUser extractedUser = extractedToken.getLocalUser();
+        extractedUser.setPassword(encryptionService.encryptPassword(newPassword));
+
+        // Delete token
+
+        extractedUser.setPasswordResetToken(null);
+        localUserRepository.save(extractedUser);
+        passwordResetTokenRepository.delete(extractedToken);
     }
 }

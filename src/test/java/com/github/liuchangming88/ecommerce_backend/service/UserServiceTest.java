@@ -7,8 +7,10 @@ import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRespons
 import com.github.liuchangming88.ecommerce_backend.configuration.MapperConfig;
 import com.github.liuchangming88.ecommerce_backend.exception.*;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
+import com.github.liuchangming88.ecommerce_backend.model.repository.PasswordResetTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.util.TestDataUtil;
 import org.junit.jupiter.api.Assertions;
@@ -24,7 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,15 +41,15 @@ public class UserServiceTest {
     @Mock
     private JwtService jwtService;
     @Mock
-    private VerificationTokenService verificationTokenService;
+    private TokenService tokenService;
     @Mock
     private EmailService emailService;
+    @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
 
     // Service class under test
     @InjectMocks
     private UserService userService;
-
-    private final int emailVerificationTokenExpiryTime = 86400;
 
     @BeforeEach
     void setUp() {
@@ -98,13 +100,13 @@ public class UserServiceTest {
         when(encryptionService.encryptPassword(request.getPassword()))
                 .thenReturn("EncryptedPassword");
         VerificationToken mockToken = mock(VerificationToken.class);
-        when(verificationTokenService.createVerificationToken(any(LocalUser.class)))
+        when(tokenService.createVerificationToken(any(LocalUser.class)))
                 .thenReturn(mockToken);
 
         // Assert the return
         RegistrationResponse actual = userService.registerUser(request);
-        Assertions.assertEquals(request.getUsername(), actual.getUsername());
-        Assertions.assertEquals(request.getEmail(), actual.getEmail());
+        assertEquals(request.getUsername(), actual.getUsername());
+        assertEquals(request.getEmail(), actual.getEmail());
 
         // Verify
         verify(emailService, times(1)).sendVerificationEmail(mockToken);
@@ -195,7 +197,7 @@ public class UserServiceTest {
 
         // Stub verificationTokenService to return a new token
         VerificationToken newToken = new VerificationToken();
-        when(verificationTokenService.createVerificationToken(eq(localUser)))
+        when(tokenService.createVerificationToken(eq(localUser)))
                 .thenReturn(newToken);
 
         // Assert that UserNotVerifiedException is thrown with appropriate message
@@ -228,7 +230,7 @@ public class UserServiceTest {
 
         // Stub verificationTokenService to return a new token
         VerificationToken newToken = new VerificationToken();
-        when(verificationTokenService.createVerificationToken(eq(localUser)))
+        when(tokenService.createVerificationToken(eq(localUser)))
                 .thenReturn(newToken);
 
         // Assert that UserNotVerifiedException is thrown with appropriate message
@@ -264,7 +266,7 @@ public class UserServiceTest {
 
         // Assert that the returned token matches the stubbed token
         String token = userService.loginUser(request);
-        Assertions.assertEquals("mockJwtToken", token);
+        assertEquals("mockJwtToken", token);
 
         // Verify that no verification email is sent
         verify(emailService, never()).sendVerificationEmail(any());
@@ -281,7 +283,7 @@ public class UserServiceTest {
 
         // Assert that InvalidVerificationTokenException is thrown
         assertThrows(
-                InvalidVerificationTokenException.class,
+                InvalidTokenException.class,
                 () -> userService.verifyUser(token)
         );
     }
@@ -334,7 +336,7 @@ public class UserServiceTest {
 
         // Assert that VerificationTokenExpiredException is thrown
         assertThrows(
-                VerificationTokenExpiredException.class,
+                TokenExpiredException.class,
                 () -> userService.verifyUser(token)
         );
     }
@@ -362,11 +364,238 @@ public class UserServiceTest {
 
         // Assert that the user's email is now verified and verification token is null
         Assertions.assertTrue(localUser.getIsEmailVerified());
-        Assertions.assertNull(localUser.getVerificationToken());
+        assertNull(localUser.getVerificationToken());
 
         // Verify that the user is saved and token is deleted
         verify(localUserRepository, times(1)).save(eq(localUser));
         verify(verificationTokenRepository, times(1)).delete(eq(verificationToken));
     }
 
+    @Test
+    public void sendResetPasswordEmail_wrongEmail_noEmailSent() {
+        // Create a LocalUser
+        LocalUser localUser = new LocalUser();
+        localUser.setUsername("testUsername");
+        localUser.setPassword("hashedPassword");
+        localUser.setEmail("testEmail@gmail.com");
+
+        // Stub
+        when(localUserRepository.findByEmailIgnoreCase("GibberishEmail@gmail.com"))
+                .thenReturn(Optional.empty());
+
+        // Act
+        userService.sendResetPasswordEmail("GibberishEmail@gmail.com");
+
+        // Verify
+        verify(emailService, times(0)).sendPasswordResetEmail(any(PasswordResetToken.class));
+        verify(passwordResetTokenRepository, times(0)).save(any(PasswordResetToken.class));
+    }
+
+    @Test
+    public void sendResetPasswordEmail_correctEmail_sendEmail() {
+        // Create a LocalUser
+        LocalUser localUser = new LocalUser();
+        localUser.setUsername("testUsername");
+        localUser.setPassword("hashedPassword");
+        localUser.setEmail("testEmail@gmail.com");
+
+        // Create a password reset token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setToken("AStringOfToken");
+        passwordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        passwordResetToken.setLocalUser(localUser);
+
+        // Stub
+        when(localUserRepository.findByEmailIgnoreCase(localUser.getEmail()))
+                .thenReturn(Optional.of(localUser));
+        when(tokenService.createPasswordResetToken(localUser))
+                .thenReturn(passwordResetToken);
+
+        // Act
+        userService.sendResetPasswordEmail(localUser.getEmail());
+
+        // Verify
+        verify(emailService, times(1)).sendPasswordResetEmail(passwordResetToken);
+        verify(passwordResetTokenRepository, times(1)).save(passwordResetToken);
+    }
+
+    @Test
+    public void sendResetPasswordEmail_correctEmailAndTokenHasExpired_resendEmail() {
+        // Create a LocalUser
+        LocalUser localUser = new LocalUser();
+        localUser.setUsername("testUsername");
+        localUser.setPassword("hashedPassword");
+        localUser.setEmail("testEmail@gmail.com");
+
+        // Create a password reset token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setToken("AStringOfToken");
+        passwordResetToken.setExpireAt(LocalDateTime.now().minusSeconds(1));
+        passwordResetToken.setLocalUser(localUser);
+
+        localUser.setPasswordResetToken(passwordResetToken);
+
+        // Create a new password reset token
+        PasswordResetToken newPasswordResetToken = new PasswordResetToken();
+        newPasswordResetToken.setToken("newToken");
+        newPasswordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        newPasswordResetToken.setLocalUser(localUser);
+
+        // Stub
+        when(localUserRepository.findByEmailIgnoreCase(localUser.getEmail()))
+                .thenReturn(Optional.of(localUser));
+        when(tokenService.createPasswordResetToken(localUser))
+                .thenReturn(newPasswordResetToken);
+
+        // Act
+        userService.sendResetPasswordEmail(localUser.getEmail());
+
+        // Verify
+        verify(emailService, times(1)).sendPasswordResetEmail(newPasswordResetToken);
+        verify(passwordResetTokenRepository, times(1)).save(newPasswordResetToken);
+    }
+
+    @Test
+    public void sendResetPasswordEmail_correctEmailButTokenHasNotExpired_noResendEmail() {
+        // Create a LocalUser
+        LocalUser localUser = new LocalUser();
+        localUser.setUsername("testUsername");
+        localUser.setPassword("hashedPassword");
+        localUser.setEmail("testEmail@gmail.com");
+
+        // Create a password reset token
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setToken("AStringOfToken");
+        passwordResetToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        passwordResetToken.setLocalUser(localUser);
+
+        localUser.setPasswordResetToken(passwordResetToken);
+
+        // Act
+        userService.sendResetPasswordEmail(localUser.getEmail());
+
+        // Verify
+        verify(emailService, times(0)).sendPasswordResetEmail(any(PasswordResetToken.class));
+        verify(passwordResetTokenRepository, times(0)).save(any(PasswordResetToken.class));
+    }
+
+    @Test
+    public void validateResetToken_invalidToken_throwsInvalidToken() {
+        // Arrange
+        String invalidToken = "invalidToken";
+        when(passwordResetTokenRepository.findByToken(invalidToken))
+                .thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(InvalidTokenException.class,
+                () -> userService.validateResetToken(invalidToken)
+        );
+    }
+
+    @Test
+    public void validateResetToken_expiredToken_throwsExpiredToken() {
+        // Arrange
+        String expiredTokenStr = "expiredToken";
+        PasswordResetToken expiredToken = new PasswordResetToken();
+        expiredToken.setToken(expiredTokenStr);
+        expiredToken.setExpireAt(LocalDateTime.now().minusSeconds(1));
+        when(passwordResetTokenRepository.findByToken(expiredTokenStr))
+                .thenReturn(Optional.of(expiredToken));
+
+        // Act & Assert
+        assertThrows(TokenExpiredException.class,
+                () -> userService.validateResetToken(expiredTokenStr)
+        );
+    }
+
+    @Test
+    public void validateResetToken_validToken_returnsToken() {
+        // Arrange
+        String validTokenStr = "validToken";
+        PasswordResetToken validToken = new PasswordResetToken();
+        validToken.setToken(validTokenStr);
+        validToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        when(passwordResetTokenRepository.findByToken(validTokenStr))
+                .thenReturn(Optional.of(validToken));
+
+        // Act
+        PasswordResetToken result = userService.validateResetToken(validTokenStr);
+
+        // Assert
+        assertEquals(validToken, result);
+    }
+
+    @Test
+    public void resetPassword_passwordsDoNotMatch_throwsPasswordsDoNotMatch() {
+        // Arrange
+        String token = "someToken";
+        String password1 = "Password1";
+        String password2 = "Password2";
+
+        // Act & Assert
+        assertThrows(PasswordsDoNotMatchException.class,
+                () -> userService.resetPassword(token, password1, password2)
+        );
+    }
+
+    @Test
+    public void resetPassword_invalidToken_throwsInvalidToken() {
+        // Arrange
+        String invalidToken = "invalidToken";
+        when(passwordResetTokenRepository.findByToken(invalidToken))
+                .thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(InvalidTokenException.class,
+                () -> userService.resetPassword(invalidToken, "Password1", "Password1")
+        );
+    }
+
+    @Test
+    public void resetPassword_expiredToken_throwsExpiredToken() {
+        // Arrange
+        String expiredTokenStr = "expiredToken";
+        PasswordResetToken expiredToken = new PasswordResetToken();
+        expiredToken.setToken(expiredTokenStr);
+        expiredToken.setExpireAt(LocalDateTime.now().minusSeconds(1));
+        LocalUser user = new LocalUser();
+        expiredToken.setLocalUser(user);
+        when(passwordResetTokenRepository.findByToken(expiredTokenStr))
+                .thenReturn(Optional.of(expiredToken));
+
+        // Act & Assert
+        assertThrows(TokenExpiredException.class,
+                () -> userService.resetPassword(expiredTokenStr, "Password1", "Password1")
+        );
+    }
+
+    @Test
+    public void resetPassword_validTokenAndMatchingPasswords_updatesPasswordAndDeletesToken() {
+        // Arrange
+        String validTokenStr = "validToken";
+        LocalUser user = new LocalUser();
+        user.setUsername("testUser");
+        user.setEmail("test@example.com");
+        user.setPassword("oldPassword");
+        PasswordResetToken validToken = new PasswordResetToken();
+        validToken.setToken(validTokenStr);
+        validToken.setExpireAt(LocalDateTime.now().plusSeconds(900));
+        validToken.setLocalUser(user);
+        when(passwordResetTokenRepository.findByToken(validTokenStr))
+                .thenReturn(Optional.of(validToken));
+
+        String newPassword = "newPassword";
+        String hashedPassword = "hashedNewPassword";
+        when(encryptionService.encryptPassword(newPassword))
+                .thenReturn(hashedPassword);
+
+        // Act
+        userService.resetPassword(validTokenStr, newPassword, newPassword);
+
+        // Assert
+        assertEquals(hashedPassword, user.getPassword());
+        assertNull(user.getPasswordResetToken());
+        verify(localUserRepository).save(user);
+        verify(passwordResetTokenRepository).delete(validToken);
+    }
 }
