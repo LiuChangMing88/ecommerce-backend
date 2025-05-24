@@ -119,7 +119,7 @@ public class GlobalExceptionHandler {
     // Conflict for when user is already email verified but still tried to verify
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(UserAlreadyVerifiedException.class)
-    public ErrorResponse handleUserAlreadyVerifiedException (RuntimeException ex, HttpServletRequest request) {
+    public ErrorResponse handleUserAlreadyVerifiedException (UserAlreadyVerifiedException ex, HttpServletRequest request) {
         logger.error("The user is already verified: {}", ex.getMessage());
         return new ErrorResponse(
                 LocalDateTime.now(),
@@ -140,6 +140,21 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    // Password reset
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(PasswordsDoNotMatchException.class)
+    public ErrorResponse handlePasswordResetException(PasswordsDoNotMatchException ex, HttpServletRequest request) {
+        logger.error("Password reset error: {}", ex.getMessage());
+        return new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad request",
                 ex.getMessage(),
                 request.getRequestURI(),
                 null
