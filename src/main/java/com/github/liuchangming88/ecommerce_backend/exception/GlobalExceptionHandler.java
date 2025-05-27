@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -23,10 +24,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LogManager.getLogger(GlobalExceptionHandler.class);
 
+    // For duplicated resources
     @ResponseStatus(HttpStatus.CONFLICT)
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ErrorResponse handleRegisterException (UserAlreadyExistsException ex, HttpServletRequest request) {
-        logger.error("User registration error: {}", ex.getMessage());
+    @ExceptionHandler({DuplicatedUserException.class, DuplicatedAddressException.class})
+    public ErrorResponse handleRegisterException (RuntimeException ex, HttpServletRequest request) {
+        logger.error("Duplicated resource: {}", ex.getMessage());
         return new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
@@ -155,6 +157,37 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad request",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    // For not found resources
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(AddressNotFoundException.class)
+    public ErrorResponse handlePasswordResetException(AddressNotFoundException ex, HttpServletRequest request) {
+        logger.error("Resource not found: {}", ex.getMessage());
+        return new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "Not found",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+
+    // For when user try to access resources they don't have authorization for
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ErrorResponse handlePasswordResetException(AccessDeniedException ex, HttpServletRequest request) {
+        logger.error("Access denied: {}", ex.getMessage());
+        return new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Access denied",
                 ex.getMessage(),
                 request.getRequestURI(),
                 null
