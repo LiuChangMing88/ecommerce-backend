@@ -1,14 +1,14 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
 
-import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
-import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest;
-import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
+import com.github.liuchangming88.ecommerce_backend.api.model.*;
 import com.github.liuchangming88.ecommerce_backend.configuration.MapperConfig;
 import com.github.liuchangming88.ecommerce_backend.exception.*;
+import com.github.liuchangming88.ecommerce_backend.model.Address;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
+import com.github.liuchangming88.ecommerce_backend.model.repository.AddressRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.PasswordResetTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
@@ -21,9 +21,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,6 +40,10 @@ public class UserServiceTest {
     @Mock
     private VerificationTokenRepository verificationTokenRepository;
     @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+    @Mock
+    private AddressRepository addressRepository;
+    @Mock
     private EncryptionService encryptionService;
     @Mock
     private JwtService jwtService;
@@ -44,9 +51,6 @@ public class UserServiceTest {
     private TokenService tokenService;
     @Mock
     private EmailService emailService;
-    @Mock
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
     // Service class under test
     @InjectMocks
     private UserService userService;
@@ -70,7 +74,7 @@ public class UserServiceTest {
 
         // Proceed with the test logic that expects a UserAlreadyExistsException
         assertThrows(
-                UserAlreadyExistsException.class,
+                DuplicatedUserException.class,
                 () -> userService.registerUser(request)
         );
     }
@@ -87,7 +91,7 @@ public class UserServiceTest {
 
         // Proceed with the test logic that expects a UserAlreadyExistsException
         Assertions.assertThrows(
-                UserAlreadyExistsException.class,
+                DuplicatedUserException.class,
                 () -> userService.registerUser(request)
         );
     }
@@ -598,4 +602,282 @@ public class UserServiceTest {
         verify(localUserRepository).save(user);
         verify(passwordResetTokenRepository).delete(validToken);
     }
+
+    @Test
+    public void getAddresses_validUser_returnsMappedAddressResponses() {
+        // Arrange
+        Long userId = 1L;
+        LocalUser localUser = new LocalUser();
+        localUser.setId(userId);
+
+        Address address1 = TestDataUtil.createTestAddressA(localUser);
+        Address address2 = TestDataUtil.createTestAddressB(localUser);
+
+        List<Address> addressList = Arrays.asList(address1, address2);
+
+        AddressResponse response1 = new AddressResponse();
+        response1.setId(address1.getId());
+        response1.setAddressLine1(address1.getAddressLine1());
+        response1.setAddressLine2(address1.getAddressLine2());
+        response1.setCity(address1.getCity());
+        response1.setCountry(address1.getCountry());
+
+        AddressResponse response2 = new AddressResponse();
+        response2.setId(address2.getId());
+        response2.setAddressLine1(address2.getAddressLine1());
+        response2.setAddressLine2(address2.getAddressLine2());
+        response2.setCity(address2.getCity());
+        response2.setCountry(address2.getCountry());
+
+        when(addressRepository.findByLocalUser_Id(userId)).thenReturn(addressList);
+
+
+        // Act
+        List<AddressResponse> result = userService.getAddresses(localUser);
+
+        // Assert
+        assertEquals(2, result.size());
+        assertEquals(response1.getCity(), result.get(0).getCity());
+        assertEquals(response2.getCity(), result.get(1).getCity());
+    }
+
+    @Test
+    public void addAddressToUser_addressAlreadyExists_throwsDuplicatedAddressException() {
+        // Arrange
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        AddressUpdateRequest request = new AddressUpdateRequest();
+        request.setAddressLine1("123 Main St");
+        request.setAddressLine2("Apt 4B");
+        request.setCity("New York");
+        request.setCountry("USA");
+
+        when(addressRepository.existsByLocalUserAndAddressLine1AndAddressLine2AndCityAndCountry(
+                localUser,
+                request.getAddressLine1(),
+                request.getAddressLine2(),
+                request.getCity(),
+                request.getCountry()
+        )).thenReturn(true);
+
+        // Act & Assert
+        assertThrows(DuplicatedAddressException.class,
+                () -> userService.addAddressToUser(localUser, request)
+        );
+    }
+
+    @Test
+    public void addAddressToUser_newAddress_returnsAddressResponse() {
+        // Arrange
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        AddressUpdateRequest request = new AddressUpdateRequest();
+        request.setAddressLine1("123 Main St");
+        request.setAddressLine2("Apt 4B");
+        request.setCity("New York");
+        request.setCountry("USA");
+
+        // This is identical to the AddressUpdateRequest above
+        Address savedAddress = TestDataUtil.createTestAddressA(localUser);
+
+        AddressResponse expectedResponse = new AddressResponse();
+        expectedResponse.setId(savedAddress.getId());
+        expectedResponse.setAddressLine1(savedAddress.getAddressLine1());
+        expectedResponse.setAddressLine2(savedAddress.getAddressLine2());
+        expectedResponse.setCity(savedAddress.getCity());
+        expectedResponse.setCountry(savedAddress.getCountry());
+
+        when(addressRepository.save(any(Address.class))).thenReturn(savedAddress);
+
+        // Act
+        AddressResponse actualResponse = userService.addAddressToUser(localUser, request);
+
+        // Assert
+        assertEquals(expectedResponse.getId(), actualResponse.getId());
+        assertEquals(expectedResponse.getAddressLine1(), actualResponse.getAddressLine1());
+        assertEquals(expectedResponse.getAddressLine2(), actualResponse.getAddressLine2());
+        assertEquals(expectedResponse.getCity(), actualResponse.getCity());
+        assertEquals(expectedResponse.getCountry(), actualResponse.getCountry());
+    }
+
+    @Test
+    public void updateAddress_addressNotFound_throwsAddressNotFoundException() {
+        // Arrange
+        Long addressId = 1L;
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        AddressUpdateRequest request = new AddressUpdateRequest();
+        request.setAddressLine1("123 Main St");
+        request.setAddressLine2("Apt 4B");
+        request.setCity("New York");
+        request.setCountry("USA");
+
+        when(addressRepository.findById(addressId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(AddressNotFoundException.class,
+                () -> userService.updateAddress(localUser, addressId, request)
+        );
+    }
+
+    @Test
+    public void updateAddress_userNotAuthorized_throwsAccessDeniedException() {
+        // Arrange
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        LocalUser differentUser = new LocalUser();
+        differentUser.setId(2L);
+
+        Address existingAddress = TestDataUtil.createTestAddressA(differentUser);
+
+        AddressUpdateRequest request = new AddressUpdateRequest();
+        request.setAddressLine1("123 Main St");
+        request.setAddressLine2("Apt 4B");
+        request.setCity("New York");
+        request.setCountry("USA");
+
+        when(addressRepository.findById(existingAddress.getId())).thenReturn(Optional.of(existingAddress));
+
+        // Act & Assert
+        assertThrows(AccessDeniedException.class,
+                () -> userService.updateAddress(localUser, existingAddress.getId(), request)
+        );
+    }
+
+    @Test
+    public void updateAddress_duplicateAddress_throwsDuplicatedAddressException() {
+        // Arrange
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        Address existingAddress = TestDataUtil.createTestAddressA(localUser);
+
+        AddressUpdateRequest request = new AddressUpdateRequest();
+        request.setAddressLine1(existingAddress.getAddressLine1());
+        request.setAddressLine2(existingAddress.getAddressLine2());
+        request.setCity(existingAddress.getCity());
+        request.setCountry(existingAddress.getCountry());
+
+        when(addressRepository.findById(existingAddress.getId())).thenReturn(Optional.of(existingAddress));
+        when(addressRepository.existsByLocalUserAndAddressLine1AndAddressLine2AndCityAndCountry(
+                localUser,
+                request.getAddressLine1(),
+                request.getAddressLine2(),
+                request.getCity(),
+                request.getCountry()
+        )).thenReturn(true);
+
+        // Act & Assert
+        assertThrows(DuplicatedAddressException.class,
+                () -> userService.updateAddress(localUser, existingAddress.getId(), request)
+        );
+    }
+
+    @Test
+    public void updateAddress_successfulUpdate_returnsUpdatedAddressResponse() {
+        // Arrange
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        Address existingAddress = TestDataUtil.createTestAddressA(localUser);
+
+        AddressUpdateRequest request = new AddressUpdateRequest();
+        request.setAddressLine1("123 Main St");
+        request.setAddressLine2("Apt 4B");
+        request.setCity("New York");
+        request.setCountry("USA");
+
+        Address updatedAddress = new Address();
+        updatedAddress.setId(existingAddress.getId());
+        updatedAddress.setAddressLine1(request.getAddressLine1());
+        updatedAddress.setAddressLine2(request.getAddressLine2());
+        updatedAddress.setCity(request.getCity());
+        updatedAddress.setCountry(request.getCountry());
+        updatedAddress.setLocalUser(localUser);
+
+        AddressResponse expectedResponse = new AddressResponse();
+        expectedResponse.setId(existingAddress.getId());
+        expectedResponse.setAddressLine1(request.getAddressLine1());
+        expectedResponse.setAddressLine2(request.getAddressLine2());
+        expectedResponse.setCity(request.getCity());
+        expectedResponse.setCountry(request.getCountry());
+
+        when(addressRepository.findById(existingAddress.getId())).thenReturn(Optional.of(existingAddress));
+        when(addressRepository.existsByLocalUserAndAddressLine1AndAddressLine2AndCityAndCountry(
+                localUser,
+                request.getAddressLine1(),
+                request.getAddressLine2(),
+                request.getCity(),
+                request.getCountry()
+        )).thenReturn(false);
+        when(addressRepository.save(any(Address.class))).thenReturn(updatedAddress);
+
+        // Act
+        AddressResponse actualResponse = userService.updateAddress(localUser, existingAddress.getId(), request);
+
+        // Assert
+        assertEquals(expectedResponse.getId(), actualResponse.getId());
+        assertEquals(expectedResponse.getAddressLine1(), actualResponse.getAddressLine1());
+        assertEquals(expectedResponse.getAddressLine2(), actualResponse.getAddressLine2());
+        assertEquals(expectedResponse.getCity(), actualResponse.getCity());
+        assertEquals(expectedResponse.getCountry(), actualResponse.getCountry());
+    }
+
+    @Test
+    public void deleteAddress_addressNotFound_throwsAddressNotFoundException() {
+        // Arrange
+        Long addressId = 1L;
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        when(addressRepository.findById(addressId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(AddressNotFoundException.class,
+                () -> userService.deleteAddress(localUser, addressId)
+        );
+    }
+
+    @Test
+    public void deleteAddress_userNotAuthorized_throwsAccessDeniedException() {
+        // Arrange
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        LocalUser differentUser = new LocalUser();
+        differentUser.setId(2L);
+
+        Address existingAddress = TestDataUtil.createTestAddressA(differentUser);
+
+        when(addressRepository.findById(existingAddress.getId())).thenReturn(Optional.of(existingAddress));
+
+        // Act & Assert
+        assertThrows(AccessDeniedException.class,
+                () -> userService.deleteAddress(localUser, existingAddress.getId())
+        );
+    }
+
+    @Test
+    public void deleteAddress_successfulDeletion_callsDeleteById() {
+        // Arrange
+        Long addressId = 1L;
+        LocalUser localUser = new LocalUser();
+        localUser.setId(1L);
+
+        Address existingAddress = TestDataUtil.createTestAddressA(localUser);
+        existingAddress.setId(addressId);
+
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(existingAddress));
+
+        // Act
+        userService.deleteAddress(localUser, addressId);
+
+        // Assert
+        verify(addressRepository, times(1)).deleteById(addressId);
+    }
+
 }
