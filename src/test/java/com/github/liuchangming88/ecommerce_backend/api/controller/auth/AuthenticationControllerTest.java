@@ -13,6 +13,7 @@ import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRep
 import com.github.liuchangming88.ecommerce_backend.model.repository.PasswordResetTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.service.EncryptionService;
+import com.github.liuchangming88.ecommerce_backend.service.UserService;
 import com.github.liuchangming88.ecommerce_backend.util.TestDataUtil;
 import com.icegreen.greenmail.configuration.GreenMailConfiguration;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
@@ -65,6 +66,9 @@ public class AuthenticationControllerTest {
     @Autowired
     private LocalUserRepository localUserRepository;
 
+    @Autowired
+    private UserService userService;
+
     @Test
     void registerUser_userAlreadyExists_returns409() throws Exception {
         // This user already exists
@@ -75,7 +79,7 @@ public class AuthenticationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registrationRequest))
         ).andExpect(status().isConflict())
-                .andExpect(result -> assertInstanceOf(UserAlreadyExistsException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(DuplicatedUserException.class, result.getResolvedException()));
     }
 
     @Test
@@ -179,6 +183,25 @@ public class AuthenticationControllerTest {
                                 .param("token", "expired-token")
                 ).andExpect(status().isUnauthorized())
                 .andExpect(result -> assertInstanceOf(TokenExpiredException.class, result.getResolvedException()));
+    }
+
+    @Test
+    void getProfile_authenticatedUser_returns200() throws Exception {
+        // This user is present in the H2 test database
+        LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
+        String jwtToken = userService.loginUser(userALoginRequest);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/auth/profile")
+                        .header("Authorization", "Bearer " + jwtToken)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(userALoginRequest.getUsername()));
+    }
+
+    @Test
+    void getProfile_unauthenticatedUser_returns401() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/auth/profile"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
