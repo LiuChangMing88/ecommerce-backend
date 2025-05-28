@@ -246,7 +246,7 @@ public class UserService {
         Address extractedAddress = retrievedAddress.get();
         // Check authorization
         if (!addressCrudPermissionCheck(localUser.getId(), extractedAddress))
-            throw new AccessDeniedException("You don't have the permission to change the address with ID" + addressId);
+            throw new AccessDeniedException("You don't have the permission to change the address with ID " + addressId);
 
         // Check if the address already exists for that user
         if (addressRepository.existsByLocalUserAndAddressLine1AndAddressLine2AndCityAndCountry(localUser,
