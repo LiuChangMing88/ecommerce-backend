@@ -1,19 +1,22 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
-import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
-import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest;
+import com.github.liuchangming88.ecommerce_backend.api.model.*;
 import com.github.liuchangming88.ecommerce_backend.exception.*;
-import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
+import com.github.liuchangming88.ecommerce_backend.model.Address;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
 import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
+import com.github.liuchangming88.ecommerce_backend.model.repository.AddressRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.PasswordResetTokenRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.VerificationTokenRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -21,6 +24,7 @@ public class UserService {
     private final LocalUserRepository localUserRepository;
     private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final AddressRepository addressRepository;
     private final EncryptionService encryptionService;
     private final JwtService jwtService;
     private final ModelMapper modelMapper;
@@ -29,7 +33,8 @@ public class UserService {
 
     public UserService(LocalUserRepository localUserRepository, EncryptionService encryptionService, JwtService jwtService,
                        ModelMapper modelMapper, TokenService tokenService, EmailService emailService,
-                       VerificationTokenRepository verificationTokenRepository, PasswordResetTokenRepository passwordResetTokenRepository) {
+                       VerificationTokenRepository verificationTokenRepository, PasswordResetTokenRepository passwordResetTokenRepository,
+                       AddressRepository addressRepository) {
         this.localUserRepository = localUserRepository;
         this.encryptionService = encryptionService;
         this.jwtService = jwtService;
@@ -38,6 +43,7 @@ public class UserService {
         this.emailService = emailService;
         this.verificationTokenRepository = verificationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.addressRepository = addressRepository;
     }
 
     /**
@@ -48,9 +54,9 @@ public class UserService {
     public RegistrationResponse registerUser(RegistrationRequest registrationRequest) {
         // Check if the unique attributes already exist in the database
         if (localUserRepository.findByEmailIgnoreCase(registrationRequest.getEmail()).isPresent())
-            throw new UserAlreadyExistsException("User with that email already exists");
+            throw new DuplicatedUserException("User with that email already exists");
         if (localUserRepository.findByUsernameIgnoreCase(registrationRequest.getUsername()).isPresent())
-            throw new UserAlreadyExistsException("User with that username already exists");
+            throw new DuplicatedUserException("User with that username already exists");
 
 
         // Create a new local user to then save that local user
@@ -198,5 +204,78 @@ public class UserService {
         extractedUser.setPasswordResetToken(null);
         localUserRepository.save(extractedUser);
         passwordResetTokenRepository.delete(extractedToken);
+    }
+
+    /**
+     * Handles address crud
+     */
+
+    // To check authorization (for now, an address can only be modified by the owner of that address)
+    private boolean addressCrudPermissionCheck (Long userId, Address address) {
+        return Objects.equals(address.getLocalUser().getId(), userId);
+    }
+
+    public List<AddressResponse> getAddresses(LocalUser localUser) {
+        List<Address> addressList = addressRepository.findByLocalUser_Id(localUser.getId());
+        return addressList.stream().map(
+                address -> modelMapper.map(address, AddressResponse.class)
+        ).toList();
+    }
+
+    public AddressResponse addAddressToUser(LocalUser localUser, AddressUpdateRequest addressUpdateRequest) {
+        // Check if the address already exists for that user
+        if (addressRepository.existsByLocalUserAndAddressLine1AndAddressLine2AndCityAndCountry(localUser,
+                addressUpdateRequest.getAddressLine1(),
+                addressUpdateRequest.getAddressLine2(),
+                addressUpdateRequest.getCity(),
+                addressUpdateRequest.getCountry()))
+            throw new DuplicatedAddressException("You already have that address registered");
+
+        Address address = modelMapper.map(addressUpdateRequest, Address.class);
+        address.setLocalUser(localUser);
+        Address savedAddress = addressRepository.save(address);
+        return modelMapper.map(savedAddress, AddressResponse.class);
+    }
+
+    public AddressResponse updateAddress(LocalUser localUser, Long addressId, AddressUpdateRequest addressUpdateRequest) {
+        // Check if address exists
+        Optional<Address> retrievedAddress = addressRepository.findById(addressId);
+        if (retrievedAddress.isEmpty())
+            throw new AddressNotFoundException("Address with ID " + addressId + " not found");
+
+        Address extractedAddress = retrievedAddress.get();
+        // Check authorization
+        if (!addressCrudPermissionCheck(localUser.getId(), extractedAddress))
+            throw new AccessDeniedException("You don't have the permission to change the address with ID " + addressId);
+
+        // Check if the address already exists for that user
+        if (addressRepository.existsByLocalUserAndAddressLine1AndAddressLine2AndCityAndCountry(localUser,
+                addressUpdateRequest.getAddressLine1(),
+                addressUpdateRequest.getAddressLine2(),
+                addressUpdateRequest.getCity(),
+                addressUpdateRequest.getCountry()))
+            throw new DuplicatedAddressException("You already have that address registered");
+
+        // Update the 4 fields: addressLine1, addressLine2, city, country
+        extractedAddress.setAddressLine1(addressUpdateRequest.getAddressLine1());
+        extractedAddress.setAddressLine2(addressUpdateRequest.getAddressLine2());
+        extractedAddress.setCity(addressUpdateRequest.getCity());
+        extractedAddress.setCountry(addressUpdateRequest.getCountry());
+        return modelMapper.map(addressRepository.save(extractedAddress), AddressResponse.class);
+    }
+
+    public void deleteAddress(LocalUser localUser, Long addressId) {
+        // Check if address exists
+        Optional<Address> retrievedAddress = addressRepository.findById(addressId);
+        if (retrievedAddress.isEmpty())
+            throw new AddressNotFoundException("Address with ID " + addressId + " not found");
+
+        Address extractedAddress = retrievedAddress.get();
+        // Check authorization
+        if (!addressCrudPermissionCheck(localUser.getId(), extractedAddress))
+            throw new AccessDeniedException("You don't have the permission to change the address with ID " + addressId);
+
+        // Delete
+        addressRepository.deleteById(addressId);
     }
 }
