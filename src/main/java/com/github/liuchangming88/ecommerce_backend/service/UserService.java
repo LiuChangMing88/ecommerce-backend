@@ -2,10 +2,7 @@ package com.github.liuchangming88.ecommerce_backend.service;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.*;
 import com.github.liuchangming88.ecommerce_backend.exception.*;
-import com.github.liuchangming88.ecommerce_backend.model.Address;
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
-import com.github.liuchangming88.ecommerce_backend.model.PasswordResetToken;
-import com.github.liuchangming88.ecommerce_backend.model.VerificationToken;
+import com.github.liuchangming88.ecommerce_backend.model.*;
 import com.github.liuchangming88.ecommerce_backend.model.repository.AddressRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
 import com.github.liuchangming88.ecommerce_backend.model.repository.PasswordResetTokenRepository;
@@ -65,6 +62,7 @@ public class UserService {
         localUser.setEmail(registrationRequest.getEmail());
         localUser.setFirstName(registrationRequest.getFirstName());
         localUser.setLastName(registrationRequest.getLastName());
+        localUser.setRole(Role.USER);
 
         // Encrypt password using Bcrypt
         localUser.setPassword(encryptionService.encryptPassword(registrationRequest.getPassword()));
