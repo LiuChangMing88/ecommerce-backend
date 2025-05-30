@@ -2,6 +2,7 @@ package com.github.liuchangming88.ecommerce_backend.api.controller.user;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressUpdateRequest;
+import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.service.UserService;
 import jakarta.validation.Valid;
@@ -19,6 +20,19 @@ public class UserController {
 
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    @GetMapping(path = "/profile")
+    public ResponseEntity<RegistrationResponse> getProfile (@AuthenticationPrincipal LocalUser localUser) {
+        return new ResponseEntity<>(
+                new RegistrationResponse(
+                        localUser.getUsername(),
+                        localUser.getEmail(),
+                        localUser.getFirstName(),
+                        localUser.getLastName(),
+                        ""
+                ), HttpStatus.OK
+        );
     }
 
     @GetMapping("/addresses")

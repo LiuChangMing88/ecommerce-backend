@@ -186,25 +186,6 @@ public class AuthenticationControllerTest {
     }
 
     @Test
-    void getProfile_authenticatedUser_returns200() throws Exception {
-        // This user is present in the H2 test database
-        LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
-        String jwtToken = userService.loginUser(userALoginRequest);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/auth/profile")
-                        .header("Authorization", "Bearer " + jwtToken)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value(userALoginRequest.getUsername()));
-    }
-
-    @Test
-    void getProfile_unauthenticatedUser_returns401() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/auth/profile"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     void forgotPassword_invalidEmail_returns400() throws Exception {
         // Create a request with an invalid email
         ForgotPasswordRequest forgotPasswordRequest = new ForgotPasswordRequest();
