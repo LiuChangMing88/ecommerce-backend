@@ -5,7 +5,8 @@ INSERT INTO local_user (username, password, email, first_name, last_name, is_ema
     ('usernameA', '$2a$10$XPef.8lBPHjwo1ytX.QJX.EwlTAR56CNUzMkK/PDItfIGsW82S1im', 'emailA@gmail.com', 'userA first name', 'userA last name', TRUE, 'USER'),
     ('usernameB', '$2a$10$oDCn6d1gQlkfkRxNNGd5.e/9SodcnL8qSwWeE/Bw2sSxENSpzIfLS', 'emailB@gmail.com', 'userB first name', 'userB last name', FALSE, 'USER'),
     ('usernameC', '$2a$10$STbcoOCCTbo/.g1D4VOyaOj6guD1Vp7auC0CdJmcY8ujvPjpmW7ia', 'emailC@gmail.com', 'userC first name', 'userC last name', TRUE, 'USER'),
-    ('usernameD', '$2a$10$p8voH16jgyOZ3AibKkhwguMGCbpH.E89omNIlWzSB3RWdYQvy5hx2', 'emailD@gmail.com', 'userD first name', 'userD last name', TRUE, 'USER');
+    ('usernameD', '$2a$10$p8voH16jgyOZ3AibKkhwguMGCbpH.E89omNIlWzSB3RWdYQvy5hx2', 'emailD@gmail.com', 'userD first name', 'userD last name', TRUE, 'USER'),
+    ('usernameE', '$2a$10$rfARD35q89Fsr5r5n3ZujOuIaUdUGTUNmLvH1ZWA40pK4PYdvU/Wy', 'emailE@gmail.com', 'userE first name', 'userE last name', TRUE, 'ADMIN');
 
 INSERT INTO address(address_line_1,address_line_2 , city, country, local_user_id) VALUES
     ('123 Tester Hill', 'Apt 4B', 'Testerton', 'England', 1),

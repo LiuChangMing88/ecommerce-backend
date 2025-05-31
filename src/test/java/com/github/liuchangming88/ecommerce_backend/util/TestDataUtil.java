@@ -64,6 +64,13 @@ public class TestDataUtil {
         return loginRequest;
     }
 
+    static public LoginRequest createUserELoginRequest() {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setUsername("usernameE");
+        loginRequest.setPassword("PasswordE123");
+        return loginRequest;
+    }
+
     static public Address createTestAddressA(LocalUser localUser) {
         Address address = new Address();
         address.setId(101L);
