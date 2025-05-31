@@ -165,8 +165,8 @@ public class GlobalExceptionHandler {
 
     // For not found resources
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(AddressNotFoundException.class)
-    public ErrorResponse handlePasswordResetException(AddressNotFoundException ex, HttpServletRequest request) {
+    @ExceptionHandler({AddressNotFoundException.class, UserNotFoundException.class})
+    public ErrorResponse handlePasswordResetException(RuntimeException ex, HttpServletRequest request) {
         logger.error("Resource not found: {}", ex.getMessage());
         return new ErrorResponse(
                 LocalDateTime.now(),
