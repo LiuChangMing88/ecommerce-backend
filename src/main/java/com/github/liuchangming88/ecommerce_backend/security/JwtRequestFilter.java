@@ -12,6 +12,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -20,9 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -73,13 +73,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             // The authentication holds:
             // 1. The user (the principal)
             // 2. The credentials (which is normally password), but in this case, it can be null because UserService already handled password authentication
-            // 3. The list of roles (currently empty)
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(localUser, null, new ArrayList<>());
+            // 3. The role (as a singleton list)
+            String role = jwtService.getRole(token);
+            List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(localUser, null, authorities);
             // Populate the authentication token even more with: remote IP address and session ID (via WebAuthenticationDetailsSource)
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             // Put the authentication into the security context via security context holder
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
             // Only proceed if authentication is successful
             filterChain.doFilter(request, response);
         }

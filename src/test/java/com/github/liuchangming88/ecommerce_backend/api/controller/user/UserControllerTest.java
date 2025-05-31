@@ -34,6 +34,25 @@ public class UserControllerTest {
     private UserService userService;
 
     @Test
+    void getProfile_authenticatedUser_returns200() throws Exception {
+        // This user is present in the H2 test database
+        LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
+        String jwtToken = userService.loginUser(userALoginRequest);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/profile")
+                        .header("Authorization", "Bearer " + jwtToken)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value(userALoginRequest.getUsername()));
+    }
+
+    @Test
+    void getProfile_unauthenticatedUser_returns401() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/profile"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void getAddresses_authenticatedUserWithAddresses_returns200AndAddressList() throws Exception {
         // This user is present in the H2 test database
         LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();

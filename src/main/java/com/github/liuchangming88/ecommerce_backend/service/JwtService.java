@@ -27,7 +27,7 @@ public class JwtService {
 
     private Algorithm algorithm;
 
-    private static final String USERNAME_KEY = "USERNAME";
+    private static final String ROLE_KEY = "ROLE";
 
     // Post construct because of how spring's IOC injects data
     @PostConstruct
@@ -39,6 +39,7 @@ public class JwtService {
     public String generateJwt(LocalUser localUser) {
         return JWT.create()
                 .withSubject(localUser.getUsername())
+                .withClaim(ROLE_KEY, localUser.getRole().name())
                 .withExpiresAt(new Date(System.currentTimeMillis() + (expiryInSeconds * 1000L)))
                 .withIssuer(issuer)
                 .sign(algorithm);
@@ -56,5 +57,11 @@ public class JwtService {
     public String getSubject(String token){
         DecodedJWT decodedJWT = verifyToken(token);
         return decodedJWT.getSubject();
+    }
+
+    // Decode jwt to get role
+    public String getRole(String token) {
+        DecodedJWT decodedJWT = verifyToken(token);
+        return decodedJWT.getClaim(ROLE_KEY).asString();
     }
 }

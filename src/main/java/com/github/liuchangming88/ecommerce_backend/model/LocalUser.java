@@ -47,4 +47,8 @@ public class LocalUser {
 
     @OneToOne(mappedBy = "localUser", cascade = CascadeType.ALL)
     private PasswordResetToken passwordResetToken;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role;
 }

@@ -27,7 +27,7 @@ public class JwtRequestFilterTest {
     private LocalUserRepository localUserRepository;
 
     // Only authenticated users can access this
-    private final String AUTHENTICATION_PATH = "/auth/profile";
+    private final String AUTHENTICATION_PATH = "/users/profile";
 
     // Test that unauthenticated requests are rejected
     @Test

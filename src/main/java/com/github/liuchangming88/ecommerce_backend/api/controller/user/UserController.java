@@ -2,11 +2,13 @@ package com.github.liuchangming88.ecommerce_backend.api.controller.user;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressUpdateRequest;
+import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,11 +16,25 @@ import java.util.List;
 
 @RestController
 @RequestMapping(path = "/users")
+@PreAuthorize("hasRole('USER')")
 public class UserController {
     private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    @GetMapping(path = "/profile")
+    public ResponseEntity<RegistrationResponse> getProfile (@AuthenticationPrincipal LocalUser localUser) {
+        return new ResponseEntity<>(
+                new RegistrationResponse(
+                        localUser.getUsername(),
+                        localUser.getEmail(),
+                        localUser.getFirstName(),
+                        localUser.getLastName(),
+                        ""
+                ), HttpStatus.OK
+        );
     }
 
     @GetMapping("/addresses")

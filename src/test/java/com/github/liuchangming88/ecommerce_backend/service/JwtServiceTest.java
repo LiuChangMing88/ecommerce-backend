@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -32,6 +33,7 @@ public class JwtServiceTest {
         // Arrange
         LocalUser user = new LocalUser();
         user.setUsername("testUser");
+        user.setRole(Role.USER);
 
         // Act
         String token = jwtService.generateJwt(user);
