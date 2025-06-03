@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class AdminServiceTest {
+public class AdminUserServiceTest {
     @Mock
     private LocalUserRepository localUserRepository;
 
@@ -26,13 +26,13 @@ public class AdminServiceTest {
     private UserService userService;
 
     @InjectMocks
-    private AdminService adminService;
+    private AdminUserService adminUserService;
 
     @Test
     public void getProfileById_profileDoesNotExist_throwsUserNotFoundException() {
         // Act and assert
         assertThrows(UserNotFoundException.class,
-                () -> adminService.getProfileById(1L));
+                () -> adminUserService.getProfileById(1L));
     }
 
     @Test
@@ -53,7 +53,7 @@ public class AdminServiceTest {
                 .thenReturn(Optional.of(localUser));
 
         // Act
-        RegistrationResponse response = adminService.getProfileById(localUser.getId());
+        RegistrationResponse response = adminUserService.getProfileById(localUser.getId());
 
         // Assert
         assertEquals(localUser.getUsername(), response.getUsername());

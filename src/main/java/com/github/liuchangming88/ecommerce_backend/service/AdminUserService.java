@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class AdminService {
+public class AdminUserService {
     private final LocalUserRepository localUserRepository;
     private final UserService userService;
 
-    public AdminService(LocalUserRepository localUserRepository, UserService userService) {
+    public AdminUserService(LocalUserRepository localUserRepository, UserService userService) {
         this.localUserRepository = localUserRepository;
         this.userService = userService;
     }
