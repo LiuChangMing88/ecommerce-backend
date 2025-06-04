@@ -51,9 +51,9 @@ public class UserService {
     public RegistrationResponse registerUser(RegistrationRequest registrationRequest) {
         // Check if the unique attributes already exist in the database
         if (localUserRepository.findByEmailIgnoreCase(registrationRequest.getEmail()).isPresent())
-            throw new DuplicatedUserException("User with that email already exists");
+            throw new DuplicateResourceException("User with that email already exists");
         if (localUserRepository.findByUsernameIgnoreCase(registrationRequest.getUsername()).isPresent())
-            throw new DuplicatedUserException("User with that username already exists");
+            throw new DuplicateResourceException("User with that username already exists");
 
 
         // Create a new local user to then save that local user
@@ -86,13 +86,13 @@ public class UserService {
         // First check if the user is present in the database
         Optional<LocalUser> optionalLocalUser = localUserRepository.findByUsernameIgnoreCase(loginBody.getUsername());
         if (optionalLocalUser.isEmpty())
-            throw new IncorrectUsernameException("The username you entered doesn't exist");
+            throw new AuthenticationException("The username you entered doesn't exist");
 
         // Extract user
         LocalUser localUser = optionalLocalUser.get();
         // Check if password is correct
         if (!encryptionService.verifyPassword(loginBody.getPassword(), localUser.getPassword()))
-            throw new IncorrectPasswordException("The password you entered is incorrect");
+            throw new AuthenticationException("The password you entered is incorrect");
 
         // If user exists and password is correct check if the user is email verified or not
         if (!localUser.getIsEmailVerified()) {
@@ -106,9 +106,9 @@ public class UserService {
                 emailService.sendVerificationEmail(newVerificationToken);
                 localUser.setVerificationToken(newVerificationToken);
                 verificationTokenRepository.save(newVerificationToken);
-                throw new UserNotVerifiedException("You are not verified. We have sent you a new verification link, please check your email and verify your account!");
+                throw new AuthorizationException("You are not verified. We have sent you a new verification link, please check your email and verify your account!");
             }
-            throw new UserNotVerifiedException("You are not verified, please check your email and verify your account!");
+            throw new AuthorizationException("You are not verified, please check your email and verify your account!");
         }
         return jwtService.generateJwt(localUser);
     }
@@ -122,7 +122,7 @@ public class UserService {
         Optional<VerificationToken> opVerificationToken = verificationTokenRepository.findByToken(token);
         // If invalid token
         if (opVerificationToken.isEmpty())
-            throw new InvalidTokenException("The token is invalid");
+            throw new TokenException("The token is invalid");
 
         VerificationToken verificationToken = opVerificationToken.get();
 
@@ -137,7 +137,7 @@ public class UserService {
 
         // Check expiry
         if (verificationToken.getExpireAt().isBefore(LocalDateTime.now()))
-            throw new TokenExpiredException("The token has expired");
+            throw new TokenException("The token has expired");
 
         // Verify user
         LocalUser localUser = verificationToken.getLocalUser();
@@ -178,12 +178,12 @@ public class UserService {
 
         // Check validity
         if (retrievedToken.isEmpty())
-            throw new InvalidTokenException("The token is invalid");
+            throw new TokenException("The token is invalid");
         PasswordResetToken extractedToken = retrievedToken.get();
 
         // Check expiry
         if (extractedToken.getExpireAt().isBefore(LocalDateTime.now()))
-            throw new TokenExpiredException("The token has expired");
+            throw new TokenException("The token has expired");
         return extractedToken;
     }
 
@@ -227,7 +227,7 @@ public class UserService {
                 addressUpdateRequest.getAddressLine2(),
                 addressUpdateRequest.getCity(),
                 addressUpdateRequest.getCountry()))
-            throw new DuplicatedAddressException("You already have that address registered");
+            throw new DuplicateResourceException("You already have that address registered");
 
         Address address = modelMapper.map(addressUpdateRequest, Address.class);
         address.setLocalUser(localUser);
@@ -239,7 +239,7 @@ public class UserService {
         // Check if address exists
         Optional<Address> retrievedAddress = addressRepository.findById(addressId);
         if (retrievedAddress.isEmpty())
-            throw new AddressNotFoundException("Address with ID " + addressId + " not found");
+            throw new ResourceNotFoundException("Address with ID " + addressId + " not found");
 
         Address extractedAddress = retrievedAddress.get();
         // Check authorization
@@ -252,7 +252,7 @@ public class UserService {
                 addressUpdateRequest.getAddressLine2(),
                 addressUpdateRequest.getCity(),
                 addressUpdateRequest.getCountry()))
-            throw new DuplicatedAddressException("You already have that address registered");
+            throw new DuplicateResourceException("You already have that address registered");
 
         // Update the 4 fields: addressLine1, addressLine2, city, country
         extractedAddress.setAddressLine1(addressUpdateRequest.getAddressLine1());
@@ -266,7 +266,7 @@ public class UserService {
         // Check if address exists
         Optional<Address> retrievedAddress = addressRepository.findById(addressId);
         if (retrievedAddress.isEmpty())
-            throw new AddressNotFoundException("Address with ID " + addressId + " not found");
+            throw new ResourceNotFoundException("Address with ID " + addressId + " not found");
 
         Address extractedAddress = retrievedAddress.get();
         // Check authorization

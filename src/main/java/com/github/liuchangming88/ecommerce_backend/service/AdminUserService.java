@@ -3,7 +3,7 @@ package com.github.liuchangming88.ecommerce_backend.service;
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressUpdateRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
-import com.github.liuchangming88.ecommerce_backend.exception.UserNotFoundException;
+import com.github.liuchangming88.ecommerce_backend.exception.ResourceNotFoundException;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class AdminUserService {
     private LocalUser findLocalUserById (Long userId) {
         Optional<LocalUser> optionalLocalUser = localUserRepository.findById(userId);
         if (optionalLocalUser.isEmpty())
-            throw new UserNotFoundException("Can't find user with ID " + userId);
+            throw new ResourceNotFoundException("Can't find user with ID " + userId);
         return optionalLocalUser.get();
     }
 
