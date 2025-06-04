@@ -1,7 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationResponse;
-import com.github.liuchangming88.ecommerce_backend.exception.UserNotFoundException;
+import com.github.liuchangming88.ecommerce_backend.exception.ResourceNotFoundException;
 import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.model.Role;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
@@ -29,9 +29,9 @@ public class AdminUserServiceTest {
     private AdminUserService adminUserService;
 
     @Test
-    public void getProfileById_profileDoesNotExist_throwsUserNotFoundException() {
+    public void getProfileById_profileDoesNotExist_throwsResourceNotFoundException() {
         // Act and assert
-        assertThrows(UserNotFoundException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> adminUserService.getProfileById(1L));
     }
 

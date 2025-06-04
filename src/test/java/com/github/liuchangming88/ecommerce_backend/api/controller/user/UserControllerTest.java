@@ -3,7 +3,7 @@ package com.github.liuchangming88.ecommerce_backend.api.controller.user;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressUpdateRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
-import com.github.liuchangming88.ecommerce_backend.exception.DuplicatedAddressException;
+import com.github.liuchangming88.ecommerce_backend.exception.DuplicateResourceException;
 import com.github.liuchangming88.ecommerce_backend.service.UserService;
 import com.github.liuchangming88.ecommerce_backend.util.TestDataUtil;
 import jakarta.transaction.Transactional;
@@ -131,7 +131,7 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(addressUpdateRequest)))
                 .andExpect(status().isConflict())
-                .andExpect(result -> assertInstanceOf(DuplicatedAddressException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(DuplicateResourceException.class, result.getResolvedException()));
     }
 
     @Test

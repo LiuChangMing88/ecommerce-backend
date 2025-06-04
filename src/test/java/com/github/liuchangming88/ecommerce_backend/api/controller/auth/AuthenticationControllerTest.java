@@ -79,7 +79,7 @@ public class AuthenticationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registrationRequest))
         ).andExpect(status().isConflict())
-                .andExpect(result -> assertInstanceOf(DuplicatedUserException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(DuplicateResourceException.class, result.getResolvedException()));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class AuthenticationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest))
         ).andExpect(status().isBadRequest())
-                .andExpect(result -> assertInstanceOf(IncorrectPasswordException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(AuthenticationException.class, result.getResolvedException()));
     }
 
     @Test
@@ -118,7 +118,7 @@ public class AuthenticationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest))
         ).andExpect(status().isForbidden())
-                .andExpect(result -> assertInstanceOf(UserNotVerifiedException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(AuthorizationException.class, result.getResolvedException()));
     }
 
     @Test
@@ -139,7 +139,7 @@ public class AuthenticationControllerTest {
                 MockMvcRequestBuilders.get("/auth/verify")
                         .param("token", "Gibberish")
         ).andExpect(status().isUnauthorized())
-                .andExpect(result -> assertInstanceOf(InvalidTokenException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(TokenException.class, result.getResolvedException()));
     }
 
     @Test
@@ -182,7 +182,7 @@ public class AuthenticationControllerTest {
                         MockMvcRequestBuilders.get("/auth/verify")
                                 .param("token", "expired-token")
                 ).andExpect(status().isUnauthorized())
-                .andExpect(result -> assertInstanceOf(TokenExpiredException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(TokenException.class, result.getResolvedException()));
     }
 
     @Test
@@ -233,7 +233,7 @@ public class AuthenticationControllerTest {
                 MockMvcRequestBuilders.get("/auth/reset-password")
                         .param("token" , token)
         ).andExpect(status().isUnauthorized())
-                .andExpect(result -> assertInstanceOf(InvalidTokenException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(TokenException.class, result.getResolvedException()));
     }
 
     @Test
@@ -253,7 +253,7 @@ public class AuthenticationControllerTest {
                 MockMvcRequestBuilders.get("/auth/reset-password")
                         .param("token" , passwordResetToken.getToken())
         ).andExpect(status().isUnauthorized())
-                .andExpect(result -> assertInstanceOf(TokenExpiredException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(TokenException.class, result.getResolvedException()));
     }
 
     @Test
@@ -345,7 +345,7 @@ public class AuthenticationControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(resetPasswordRequest))
                 ).andExpect(status().isUnauthorized())
-                .andExpect(result -> assertInstanceOf(InvalidTokenException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(TokenException.class, result.getResolvedException()));
     }
 
     @Test
@@ -372,7 +372,7 @@ public class AuthenticationControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(resetPasswordRequest))
                 ).andExpect(status().isUnauthorized())
-                .andExpect(result -> assertInstanceOf(TokenExpiredException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(TokenException.class, result.getResolvedException()));
     }
 
     @Test

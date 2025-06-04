@@ -63,7 +63,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void registerUser_withExistingUsername_throwsUserAlreadyExists() {
+    public void registerUser_withExistingUsername_throwsDuplicateResourceException() {
         RegistrationRequest request = TestDataUtil.createTestRegisterRequest();
 
         LocalUser mockUser = mock(LocalUser.class);
@@ -74,13 +74,13 @@ public class UserServiceTest {
 
         // Proceed with the test logic that expects a UserAlreadyExistsException
         assertThrows(
-                DuplicatedUserException.class,
+                DuplicateResourceException.class,
                 () -> userService.registerUser(request)
         );
     }
 
     @Test
-    public void registerUser_withExistingEmail_throwsUserAlreadyExists() {
+    public void registerUser_withExistingEmail_throwsDuplicateResourceException() {
         RegistrationRequest request = TestDataUtil.createTestRegisterRequest();
 
         LocalUser mockUser = mock(LocalUser.class);
@@ -91,7 +91,7 @@ public class UserServiceTest {
 
         // Proceed with the test logic that expects a UserAlreadyExistsException
         Assertions.assertThrows(
-                DuplicatedUserException.class,
+                DuplicateResourceException.class,
                 () -> userService.registerUser(request)
         );
     }
@@ -118,17 +118,17 @@ public class UserServiceTest {
     }
 
     @Test
-    public void loginUser_withWrongUsername_throwsIncorrectUsername() {
+    public void loginUser_withWrongUsername_throwsAuthenticationException() {
         LoginRequest request = TestDataUtil.createTestLoginRequest();
 
         // Assert
-        Assertions.assertThrows(IncorrectUsernameException.class,
+        Assertions.assertThrows(AuthenticationException.class,
                 () -> userService.loginUser(request),
                 "Wrong username");
     }
 
     @Test
-    public void loginUser_withWrongPassword_throwsIncorrectPassword() {
+    public void loginUser_withWrongPassword_throwsAuthenticationException() {
         LoginRequest request = TestDataUtil.createTestLoginRequest();
 
         // Stub
@@ -136,7 +136,7 @@ public class UserServiceTest {
                 .thenReturn(Optional.of(new LocalUser()));
 
         // Assert
-        Assertions.assertThrows(IncorrectPasswordException.class,
+        Assertions.assertThrows(AuthenticationException.class,
                 () -> userService.loginUser(request),
                 "Wrong username");
     }
@@ -166,9 +166,9 @@ public class UserServiceTest {
                 .thenReturn(true);
 
         // Act & Assert
-        Assertions.assertThrows(UserNotVerifiedException.class,
+        Assertions.assertThrows(AuthorizationException.class,
                 () -> userService.loginUser(request),
-                "Expected UserNotVerifiedException for unverified email");
+                "Expected AuthorizationException for unverified email");
 
         // Verify that no new verification email is sent
         verify(emailService, never()).sendVerificationEmail(any());
@@ -205,7 +205,7 @@ public class UserServiceTest {
                 .thenReturn(newToken);
 
         // Assert that UserNotVerifiedException is thrown with appropriate message
-        assertThrows(UserNotVerifiedException.class,
+        assertThrows(AuthorizationException.class,
                 () -> userService.loginUser(request));
 
         // Verify that a new verification email is sent and token is saved
@@ -237,8 +237,8 @@ public class UserServiceTest {
         when(tokenService.createVerificationToken(eq(localUser)))
                 .thenReturn(newToken);
 
-        // Assert that UserNotVerifiedException is thrown with appropriate message
-        assertThrows(UserNotVerifiedException.class,
+        // Assert that AuthorizationException is thrown with appropriate message
+        assertThrows(AuthorizationException.class,
                 () -> userService.loginUser(request));
 
         // Verify that a new verification email is sent and token is saved
@@ -278,7 +278,7 @@ public class UserServiceTest {
 
 
     @Test
-    public void verifyUser_invalidToken_throwsInvalidToken() {
+    public void verifyUser_invalidToken_throwsTokenException() {
         String token = "invalidToken";
 
         // Stub repository to return empty
@@ -287,7 +287,7 @@ public class UserServiceTest {
 
         // Assert that InvalidVerificationTokenException is thrown
         assertThrows(
-                InvalidTokenException.class,
+                TokenException.class,
                 () -> userService.verifyUser(token)
         );
     }
@@ -322,7 +322,7 @@ public class UserServiceTest {
 
 
     @Test
-    public void verifyUser_expiredToken_throwsExpiredToken() {
+    public void verifyUser_expiredToken_throwsTokenException() {
         String token = "expiredToken";
 
         // Create a LocalUser with unverified email
@@ -340,7 +340,7 @@ public class UserServiceTest {
 
         // Assert that VerificationTokenExpiredException is thrown
         assertThrows(
-                TokenExpiredException.class,
+                TokenException.class,
                 () -> userService.verifyUser(token)
         );
     }
@@ -484,20 +484,20 @@ public class UserServiceTest {
     }
 
     @Test
-    public void validateResetToken_invalidToken_throwsInvalidToken() {
+    public void validateResetToken_invalidToken_throwsTokenException() {
         // Arrange
         String invalidToken = "invalidToken";
         when(passwordResetTokenRepository.findByToken(invalidToken))
                 .thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(InvalidTokenException.class,
+        assertThrows(TokenException.class,
                 () -> userService.validateResetToken(invalidToken)
         );
     }
 
     @Test
-    public void validateResetToken_expiredToken_throwsExpiredToken() {
+    public void validateResetToken_expiredToken_throwsTokenException() {
         // Arrange
         String expiredTokenStr = "expiredToken";
         PasswordResetToken expiredToken = new PasswordResetToken();
@@ -507,7 +507,7 @@ public class UserServiceTest {
                 .thenReturn(Optional.of(expiredToken));
 
         // Act & Assert
-        assertThrows(TokenExpiredException.class,
+        assertThrows(TokenException.class,
                 () -> userService.validateResetToken(expiredTokenStr)
         );
     }
@@ -543,20 +543,20 @@ public class UserServiceTest {
     }
 
     @Test
-    public void resetPassword_invalidToken_throwsInvalidToken() {
+    public void resetPassword_invalidToken_throwsTokenException() {
         // Arrange
         String invalidToken = "invalidToken";
         when(passwordResetTokenRepository.findByToken(invalidToken))
                 .thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(InvalidTokenException.class,
+        assertThrows(TokenException.class,
                 () -> userService.resetPassword(invalidToken, "Password1", "Password1")
         );
     }
 
     @Test
-    public void resetPassword_expiredToken_throwsExpiredToken() {
+    public void resetPassword_expiredToken_throwsTokenException() {
         // Arrange
         String expiredTokenStr = "expiredToken";
         PasswordResetToken expiredToken = new PasswordResetToken();
@@ -568,7 +568,7 @@ public class UserServiceTest {
                 .thenReturn(Optional.of(expiredToken));
 
         // Act & Assert
-        assertThrows(TokenExpiredException.class,
+        assertThrows(TokenException.class,
                 () -> userService.resetPassword(expiredTokenStr, "Password1", "Password1")
         );
     }
@@ -642,7 +642,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void addAddressToUser_addressAlreadyExists_throwsDuplicatedAddressException() {
+    public void addAddressToUser_addressAlreadyExists_throwsDuplicateResourceException() {
         // Arrange
         LocalUser localUser = new LocalUser();
         localUser.setId(1L);
@@ -662,7 +662,7 @@ public class UserServiceTest {
         )).thenReturn(true);
 
         // Act & Assert
-        assertThrows(DuplicatedAddressException.class,
+        assertThrows(DuplicateResourceException.class,
                 () -> userService.addAddressToUser(localUser, request)
         );
     }
@@ -703,7 +703,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void updateAddress_addressNotFound_throwsAddressNotFoundException() {
+    public void updateAddress_addressNotFound_throwsResourceNotFoundException() {
         // Arrange
         Long addressId = 1L;
         LocalUser localUser = new LocalUser();
@@ -718,7 +718,7 @@ public class UserServiceTest {
         when(addressRepository.findById(addressId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(AddressNotFoundException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> userService.updateAddress(localUser, addressId, request)
         );
     }
@@ -749,7 +749,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void updateAddress_duplicateAddress_throwsDuplicatedAddressException() {
+    public void updateAddress_duplicateAddress_throwsDuplicateResourceException() {
         // Arrange
         LocalUser localUser = new LocalUser();
         localUser.setId(1L);
@@ -772,7 +772,7 @@ public class UserServiceTest {
         )).thenReturn(true);
 
         // Act & Assert
-        assertThrows(DuplicatedAddressException.class,
+        assertThrows(DuplicateResourceException.class,
                 () -> userService.updateAddress(localUser, existingAddress.getId(), request)
         );
     }
@@ -828,7 +828,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void deleteAddress_addressNotFound_throwsAddressNotFoundException() {
+    public void deleteAddress_addressNotFound_throwsResourceNotFoundException() {
         // Arrange
         Long addressId = 1L;
         LocalUser localUser = new LocalUser();
@@ -837,7 +837,7 @@ public class UserServiceTest {
         when(addressRepository.findById(addressId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(AddressNotFoundException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> userService.deleteAddress(localUser, addressId)
         );
     }
