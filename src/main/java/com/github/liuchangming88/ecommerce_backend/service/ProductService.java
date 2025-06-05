@@ -1,12 +1,15 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
+import com.github.liuchangming88.ecommerce_backend.exception.ResourceNotFoundException;
+import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.model.Product;
 import com.github.liuchangming88.ecommerce_backend.model.repository.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProductService {
@@ -24,5 +27,12 @@ public class ProductService {
         return allProducts.stream()
                 .map(p -> modelMapper.map(p, ProductResponse.class))
                 .toList();
+    }
+
+    public ProductResponse getProduct (Long productId) {
+        Optional<Product> optionalProduct = productRepository.findById(productId);
+        if (optionalProduct.isEmpty())
+            throw new ResourceNotFoundException("Can't find user with ID " + productId);
+        return modelMapper.map(optionalProduct.get(), ProductResponse.class);
     }
 }
