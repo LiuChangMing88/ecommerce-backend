@@ -3,7 +3,7 @@ package com.github.liuchangming88.ecommerce_backend.api.controller.user;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressUpdateRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
-import com.github.liuchangming88.ecommerce_backend.exception.DuplicatedAddressException;
+import com.github.liuchangming88.ecommerce_backend.exception.DuplicateResourceException;
 import com.github.liuchangming88.ecommerce_backend.service.UserService;
 import com.github.liuchangming88.ecommerce_backend.util.TestDataUtil;
 import jakarta.transaction.Transactional;
@@ -33,11 +33,16 @@ public class UserControllerTest {
     @Autowired
     private UserService userService;
 
+    // Helper method to obtain JWT token for a given login request
+    private String obtainJwtToken(LoginRequest loginRequest) {
+        return userService.loginUser(loginRequest);
+    }
+
     @Test
     void getProfile_authenticatedUser_returns200() throws Exception {
         // This user is present in the H2 test database
         LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
-        String jwtToken = userService.loginUser(userALoginRequest);
+        String jwtToken = obtainJwtToken(userALoginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/profile")
                         .header("Authorization", "Bearer " + jwtToken)
@@ -56,7 +61,7 @@ public class UserControllerTest {
     void getAddresses_authenticatedUserWithAddresses_returns200AndAddressList() throws Exception {
         // This user is present in the H2 test database
         LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
-        String jwtToken = userService.loginUser(userALoginRequest);
+        String jwtToken = obtainJwtToken(userALoginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/addresses")
                         .header("Authorization", "Bearer " + jwtToken)
@@ -70,7 +75,7 @@ public class UserControllerTest {
     void getAddresses_authenticatedUserWithNoAddresses_returns200AndEmptyList() throws Exception {
         // This user is present in the H2 test database
         LoginRequest userDLoginRequest = TestDataUtil.createUserDLoginRequest();
-        String jwtToken = userService.loginUser(userDLoginRequest);
+        String jwtToken = obtainJwtToken(userDLoginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/users/addresses")
                         .header("Authorization", "Bearer " + jwtToken)
@@ -90,7 +95,7 @@ public class UserControllerTest {
 
         // This user is present in the H2 test database
         LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
-        String jwtToken = userService.loginUser(userALoginRequest);
+        String jwtToken = obtainJwtToken(userALoginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/addresses")
                         .header("Authorization", "Bearer " + jwtToken)
@@ -111,7 +116,7 @@ public class UserControllerTest {
 
         // This user is present in the H2 test database
         LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
-        String jwtToken = userService.loginUser(userALoginRequest);
+        String jwtToken = obtainJwtToken(userALoginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users/addresses")
                         .header("Authorization", "Bearer " + jwtToken)
@@ -126,7 +131,7 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(addressUpdateRequest)))
                 .andExpect(status().isConflict())
-                .andExpect(result -> assertInstanceOf(DuplicatedAddressException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(DuplicateResourceException.class, result.getResolvedException()));
     }
 
     @Test
@@ -140,7 +145,7 @@ public class UserControllerTest {
 
         // Authenticate userA
         LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
-        String jwtToken = userService.loginUser(userALoginRequest);
+        String jwtToken = obtainJwtToken(userALoginRequest);
 
         // Assume address with ID 1L exists for userA
         Long addressId = 1L;
@@ -165,7 +170,7 @@ public class UserControllerTest {
 
         // Authenticate userD
         LoginRequest userDLoginRequest = TestDataUtil.createUserDLoginRequest();
-        String jwtToken = userService.loginUser(userDLoginRequest);
+        String jwtToken = obtainJwtToken(userDLoginRequest);
 
         // Assume address with ID 1L is owned by userA, not userD
         Long addressId = 1L;
@@ -182,7 +187,7 @@ public class UserControllerTest {
     void deleteAddress_validRequest_returns204() throws Exception {
         // Authenticate userA
         LoginRequest userALoginRequest = TestDataUtil.createUserALoginRequest();
-        String jwtToken = userService.loginUser(userALoginRequest);
+        String jwtToken = obtainJwtToken(userALoginRequest);
 
         // Assume address with ID 1L exists for userA
         Long addressId = 1L;
@@ -196,7 +201,7 @@ public class UserControllerTest {
     void deleteAddress_addressNotOwnedByUser_returns403() throws Exception {
         // Authenticate userD
         LoginRequest userDLoginRequest = TestDataUtil.createUserDLoginRequest();
-        String jwtToken = userService.loginUser(userDLoginRequest);
+        String jwtToken = obtainJwtToken(userDLoginRequest);
 
         // Assume address with ID 1L is owned by userA, not userD
         Long addressId = 1L;

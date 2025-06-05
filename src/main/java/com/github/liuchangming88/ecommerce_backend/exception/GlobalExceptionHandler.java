@@ -8,8 +8,6 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -24,171 +22,99 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LogManager.getLogger(GlobalExceptionHandler.class);
 
-    // For duplicated resources
     @ResponseStatus(HttpStatus.CONFLICT)
-    @ExceptionHandler({DuplicatedUserException.class, DuplicatedAddressException.class})
-    public ErrorResponse handleRegisterException (RuntimeException ex, HttpServletRequest request) {
-        logger.error("Duplicated resource: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.CONFLICT.value(),
-                "Conflict",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ErrorResponse handleDuplicateResourceException(DuplicateResourceException ex, HttpServletRequest request) {
+        logger.error("Duplicate resource: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(UserAlreadyVerifiedException.class)
+    public ErrorResponse handleUserAlreadyVerifiedException(UserAlreadyVerifiedException ex, HttpServletRequest request) {
+        logger.warn("Attempt to verify an already verified user: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler({IncorrectUsernameException.class, IncorrectPasswordException.class})
-    public ErrorResponse handleLoginException (AuthenticationException ex, HttpServletRequest request) {
-        logger.error("User login error: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Bad request",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
+    @ExceptionHandler(AuthenticationException.class)
+    public ErrorResponse handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
+        logger.error("Authentication error: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
-    // Constraints for fields (password, username, email...)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AuthorizationException.class)
+    public ErrorResponse handleAuthorizationException(AuthorizationException ex, HttpServletRequest request) {
+        logger.error("Authorization error: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(TokenException.class)
+    public ErrorResponse handleTokenException(TokenException ex, HttpServletRequest request) {
+        logger.error("Token error: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
+        logger.error("Resource not found: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(PasswordsDoNotMatchException.class)
+    public ErrorResponse handlePasswordsDoNotMatchException(PasswordsDoNotMatchException ex, HttpServletRequest request) {
+        logger.error("Password mismatch: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ErrorResponse handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, String> validationErrors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach((FieldError error) -> validationErrors.put(error.getField(), error.getDefaultMessage()));
-
+        ex.getBindingResult().getFieldErrors().forEach(error -> validationErrors.put(error.getField(), error.getDefaultMessage()));
         logger.error("Validation error: {}", ex.getMessage());
-        String message = "Validation failed for one or more fields.";
-
         return new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
-                message,
+                "Validation failed for one or more fields.",
                 request.getRequestURI(),
                 validationErrors
         );
     }
 
-    // For when JavaMailSender fails
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(MailException.class)
-    public ErrorResponse handleEmailException(MailException ex, HttpServletRequest request) {
-        logger.error("JavaMailSender threw an exception: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Internal server error",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
+    public ErrorResponse handleMailException(MailException ex, HttpServletRequest request) {
+        logger.error("Mail sending error: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
     }
 
-    // For when the user is not verified but attempted to log in
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    @ExceptionHandler(UserNotVerifiedException.class)
-    public ErrorResponse handleUserNotVerifiedException(UserNotVerifiedException ex, HttpServletRequest request) {
-        logger.error("The user attempted to log in when they haven't verified their account: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.FORBIDDEN.value(),
-                "Forbidden",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
-    }
-
-    // For exceptions related to tokens (verification, password reset)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ExceptionHandler({InvalidTokenException.class, TokenExpiredException.class})
-    public ErrorResponse handleTokenVerificationExceptions (RuntimeException ex, HttpServletRequest request) {
-        logger.error("The token is expired or invalid: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.UNAUTHORIZED.value(),
-                "Unauthorized",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
-    }
-
-    // Conflict for when user is already email verified but still tried to verify
-    @ResponseStatus(HttpStatus.CONFLICT)
-    @ExceptionHandler(UserAlreadyVerifiedException.class)
-    public ErrorResponse handleUserAlreadyVerifiedException (UserAlreadyVerifiedException ex, HttpServletRequest request) {
-        logger.error("The user is already verified: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.CONFLICT.value(),
-                "Conflict",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
-    }
-
-    // For jwt token
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(JWTVerificationException.class)
-    public ErrorResponse handleJwtVerificationExceptions (JWTVerificationException ex, HttpServletRequest request) {
-        logger.error("The JWT token was rejected: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.UNAUTHORIZED.value(),
-                "Unauthorized",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
+    public ErrorResponse handleJwtVerificationException(JWTVerificationException ex, HttpServletRequest request) {
+        logger.error("JWT verification error: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
-    // Password reset
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(PasswordsDoNotMatchException.class)
-    public ErrorResponse handlePasswordResetException(PasswordsDoNotMatchException ex, HttpServletRequest request) {
-        logger.error("Password reset error: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Bad request",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
-    }
-
-    // For not found resources
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(AddressNotFoundException.class)
-    public ErrorResponse handlePasswordResetException(AddressNotFoundException ex, HttpServletRequest request) {
-        logger.error("Resource not found: {}", ex.getMessage());
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                "Not found",
-                ex.getMessage(),
-                request.getRequestURI(),
-                null
-        );
-    }
-
-
-    // For when user try to access resources they don't have authorization for
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(AccessDeniedException.class)
-    public ErrorResponse handlePasswordResetException(AccessDeniedException ex, HttpServletRequest request) {
+    public ErrorResponse handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
         logger.error("Access denied: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
+
+    private ErrorResponse buildErrorResponse(HttpStatus status, String message, HttpServletRequest request) {
         return new ErrorResponse(
                 LocalDateTime.now(),
-                HttpStatus.FORBIDDEN.value(),
-                "Access denied",
-                ex.getMessage(),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
                 request.getRequestURI(),
                 null
         );
