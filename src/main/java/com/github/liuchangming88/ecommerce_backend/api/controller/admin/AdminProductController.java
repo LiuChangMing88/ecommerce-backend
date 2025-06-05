@@ -43,10 +43,9 @@ public class AdminProductController {
     }
 
     @PatchMapping("/{productId}/quantity")
-    public ResponseEntity<Void> updateProductQuantity(
+    public ResponseEntity<ProductResponse> updateProductQuantity(
             @PathVariable Long productId,
             @Valid @RequestBody ProductQuantityUpdateRequest quantityUpdateRequest) {
-        adminProductService.updateProductQuantity(productId, quantityUpdateRequest.getQuantity());
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(adminProductService.updateProductQuantity(productId, quantityUpdateRequest.getQuantity()), HttpStatus.OK);
     }
 }

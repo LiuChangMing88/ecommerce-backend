@@ -48,7 +48,7 @@ public class AdminProductService {
         Product existingProduct = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
 
-        // Check for name change and potential duplication
+        // Check for potential duplication (only check when name is changed for performance)
         if (!existingProduct.getName().equals(productRequest.getName()) &&
                 productRepository.existsByName(productRequest.getName())) {
             throw new DuplicateResourceException("Product with name '" + productRequest.getName() + "' already exists.");
@@ -87,7 +87,7 @@ public class AdminProductService {
     }
 
 
-    public void updateProductQuantity(Long productId, Long quantity) {
+    public ProductResponse updateProductQuantity(Long productId, Long quantity) {
         // Retrieve the existing product
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
@@ -105,6 +105,8 @@ public class AdminProductService {
 
         // Save the updated product
         productRepository.save(product);
+
+        return modelMapper.map(product, ProductResponse.class);
     }
 
 }
