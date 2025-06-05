@@ -36,7 +36,7 @@ public class AdminUserControllerTest {
     }
 
     @Test
-    void getProfile_adminUser_returns200() throws Exception {
+    void getProfile_adminUser_returns200AndProfile() throws Exception {
         // Admin user
         LoginRequest userELoginRequest = TestDataUtil.createUserELoginRequest();
         String jwtToken = obtainJwtToken(userELoginRequest);
