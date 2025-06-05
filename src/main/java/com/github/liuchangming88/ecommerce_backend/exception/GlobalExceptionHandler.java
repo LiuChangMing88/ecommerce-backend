@@ -108,13 +108,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
 
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(Exception.class)
-    public ErrorResponse handleGenericException(Exception ex, HttpServletRequest request) {
-        logger.error("Unhandled exception: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", request);
-    }
-
 
     private ErrorResponse buildErrorResponse(HttpStatus status, String message, HttpServletRequest request) {
         return new ErrorResponse(
