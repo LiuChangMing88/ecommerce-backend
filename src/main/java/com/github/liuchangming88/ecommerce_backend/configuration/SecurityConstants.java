@@ -18,7 +18,10 @@ public class SecurityConstants {
             "/auth/reset-password",
             "/products",
             "/products/*",
-            "/error"
+            "/error",
+            "/swagger-ui/*",
+            "swagger-ui.html",
+            "/v3/api-docs/**"
     };
 
     // Convert to RequestMatchers for use elsewhere
