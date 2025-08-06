@@ -32,7 +32,7 @@ public class ProductService {
     public ProductResponse getProduct (Long productId) {
         Optional<Product> optionalProduct = productRepository.findById(productId);
         if (optionalProduct.isEmpty())
-            throw new ResourceNotFoundException("Can't find user with ID " + productId);
+            throw new ResourceNotFoundException("Can't find product with ID " + productId);
         return modelMapper.map(optionalProduct.get(), ProductResponse.class);
     }
 }
