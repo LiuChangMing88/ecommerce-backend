@@ -12,17 +12,17 @@ import org.springframework.stereotype.Service;
 public class CustomOidcUserService
         implements OAuth2UserService<OidcUserRequest, OidcUser> {
 
-    private final ProcessOAuth2User processOAuth2User;
+    private final ProcessOidcUser processOidcUser;
 
-    public CustomOidcUserService(ProcessOAuth2User processOAuth2User) {
-        this.processOAuth2User = processOAuth2User;
+    public CustomOidcUserService(ProcessOidcUser processOidcUser) {
+        this.processOidcUser = processOidcUser;
     }
 
     // Google / OIDC
     @Override
     public OidcUser loadUser(OidcUserRequest req) {
         DefaultOidcUser oidc = (DefaultOidcUser) new OidcUserService().loadUser(req);
-        DefaultOAuth2User mapped = processOAuth2User.processOAuth2User(oidc.getAttributes());
+        DefaultOAuth2User mapped = processOidcUser.processOidcUser(oidc.getAttributes());
         return new DefaultOidcUser(
                 mapped.getAuthorities(),
                 oidc.getIdToken(),
