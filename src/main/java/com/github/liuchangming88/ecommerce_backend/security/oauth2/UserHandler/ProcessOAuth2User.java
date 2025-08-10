@@ -52,7 +52,7 @@ public class ProcessOAuth2User {
                     u.setUsername(generateUniqueUsername(email));
                     u.setFirstName((String) attrs.getOrDefault("name", ""));
                     u.setLastName((String) attrs.getOrDefault("family_name", ""));
-                    // This create a random password so OAuth2 accounts can only be logged in using OAuth2 services.
+                    // This creates a random password so OAuth2 accounts can only be logged in using OAuth2 services.
                     // Because of this, be sure to prevent local login of oauth2 accounts, as if not, account hijacking might happen
                     u.setPassword(encryptionService.randomPassword());
                     // Always unverified for OAuth2!
