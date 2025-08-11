@@ -21,7 +21,10 @@ public class SecurityConstants {
             "/error",
             "/swagger-ui/*",
             "swagger-ui.html",
-            "/v3/api-docs/**"
+            "/v3/api-docs/**",
+            "/login",
+            "/oauth2/**",
+            "/login/oauth2/**"
     };
 
     // Convert to RequestMatchers for use elsewhere

@@ -34,6 +34,7 @@ build/
 
 ### KEYS ###
 application-secrets.properties
+.env
 
 ### sql
 data.sql
