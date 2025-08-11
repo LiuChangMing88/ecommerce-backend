@@ -108,6 +108,8 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
 
+    // TODO: add exception handlers to gracefully handle OAuth2 errors
+
 
     private ErrorResponse buildErrorResponse(HttpStatus status, String message, HttpServletRequest request) {
         return new ErrorResponse(
