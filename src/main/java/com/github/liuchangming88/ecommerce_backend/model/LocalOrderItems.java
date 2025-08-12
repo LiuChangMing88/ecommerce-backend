@@ -11,8 +11,8 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Entity
-@Table(name = "local_order_quantities")
-public class LocalOrderQuantities {
+@Table(name = "local_order_items")
+public class LocalOrderItems {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)

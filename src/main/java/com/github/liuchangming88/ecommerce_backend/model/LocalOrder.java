@@ -31,7 +31,7 @@ public class LocalOrder {
     @OneToMany(mappedBy = "localOrder",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
             orphanRemoval = true)
-    private List<LocalOrderQuantities> quantities = new ArrayList<>();
+    private List<LocalOrderItems> items = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
@@ -49,11 +49,14 @@ public class LocalOrder {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
+    @Column(name = "restocked")
+    private boolean restocked = false;
+
     @PreUpdate
     public void touch() { this.updatedAt = OffsetDateTime.now(); }
 
-    public void addItem(LocalOrderQuantities item) {
+    public void addItem(LocalOrderItems item) {
         item.setLocalOrder(this);
-        this.quantities.add(item);
+        this.items.add(item);
     }
 }
