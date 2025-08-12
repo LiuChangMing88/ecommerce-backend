@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.math.BigDecimal;
+
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -156,7 +158,7 @@ public class AdminProductControllerTest {
         product.setName("Product #1");
         product.setShortDescription("Product one short description.");
         product.setLongDescription("This is a very long description of product #1.");
-        product.setPrice(5.50);
+        product.setPrice(BigDecimal.valueOf(5.50));
         Inventory inventory = new Inventory();
         inventory.setQuantity(5L);
         inventory.setId(1L);
@@ -170,7 +172,7 @@ public class AdminProductControllerTest {
         product.setName("Test Product");
         product.setShortDescription("Test product short description.");
         product.setLongDescription("Test product long description.");
-        product.setPrice(8.88);
+        product.setPrice(BigDecimal.valueOf(8.88));
         Inventory inventory = new Inventory();
         inventory.setQuantity(10L);
         product.setInventory(inventory);
@@ -183,7 +185,7 @@ public class AdminProductControllerTest {
         productRequest.setName("Test Product");
         productRequest.setShortDescription("Test product short description.");
         productRequest.setLongDescription("Test product long description.");
-        productRequest.setPrice(8.88);
+        productRequest.setPrice(BigDecimal.valueOf(8.88));
         productRequest.setQuantity(10L);
         return productRequest;
     }

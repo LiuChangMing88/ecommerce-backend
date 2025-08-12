@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 public class ProductRequest {
@@ -22,7 +24,7 @@ public class ProductRequest {
     @NotNull(message = "Price must not be empty.")
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than zero.")
     @Digits(integer = 10, fraction = 2, message = "Price can only have up to 10 integer digits and 2 decimal places")
-    private Double price;
+    private BigDecimal price;
 
     @NotNull(message = "Quantity must not be empty.")
     @Min(value = 0, message = "Quantity cannot be negative.")
