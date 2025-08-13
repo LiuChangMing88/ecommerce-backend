@@ -19,5 +19,4 @@ public class VNPayProperties {
     private String currCode;
     private String locale;
     private String orderType;
-    private int expireMinutes;
 }
