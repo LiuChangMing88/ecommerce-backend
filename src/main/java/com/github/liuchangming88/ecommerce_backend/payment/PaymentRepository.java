@@ -3,6 +3,7 @@ package com.github.liuchangming88.ecommerce_backend.payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
@@ -29,7 +30,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
                p.bankCode = :bankCode,
                p.secureHash = :secureHash,
                p.rawParams = :rawParams,
-               p.updatedAt = CURRENT_TIMESTAMP
+               p.updatedAt = :now
          WHERE p.id = :id
            AND p.status = :expectedStatus
         """)
@@ -46,9 +47,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("""
         UPDATE Payment p
            SET p.status = com.github.liuchangming88.ecommerce_backend.payment.PaymentStatus.EXPIRED,
-               p.updatedAt = CURRENT_TIMESTAMP
+               p.updatedAt = :now
          WHERE p.status = com.github.liuchangming88.ecommerce_backend.payment.PaymentStatus.INITIATED
            AND p.expiresAt < :now
         """)
-    int expireInitiatedBefore(OffsetDateTime now);
+    int expireInitiatedBefore(@Param("now") OffsetDateTime now);
 }
