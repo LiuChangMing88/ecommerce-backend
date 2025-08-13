@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
-    private final Integer orderExpiryTimeInMinutes = 2;
+    private final Integer orderExpiryTimeInMinutes = 15;
 
     private final InventoryRepository inventoryRepository;
     LocalOrderRepository localOrderRepository;
