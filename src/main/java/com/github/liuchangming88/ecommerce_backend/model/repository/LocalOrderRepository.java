@@ -15,16 +15,16 @@ public interface LocalOrderRepository extends JpaRepository<LocalOrder, Long> {
     List<LocalOrder> findByLocalUser_Id(Long id);
 
     /**
-     * Returns IDs of stale PENDING orders (not yet restocked) older than cutoff.
-     * This is for the scheduler to find PENDING orders that have exceeded the time limit then mark them as FAILED and restock the product inventories
+     * Returns IDs of PENDING orders whose expiresAt has passed and not yet restocked.
+     * Ordered by expiresAt to process oldest expirations first.
      */
     @Query("""
         SELECT o.id
         FROM LocalOrder o
         WHERE o.status = com.github.liuchangming88.ecommerce_backend.model.OrderStatus.PENDING
           AND o.restocked = false
-          AND o.createdAt < :cutoff
-        ORDER BY o.createdAt ASC
+          AND o.expiresAt < :now
+        ORDER BY o.expiresAt ASC
         """)
-    List<Long> findStalePendingOrderIds(OffsetDateTime cutoff, Pageable pageable);
+    List<Long> findExpiredPendingOrderIds(OffsetDateTime now, Pageable pageable);
 }

@@ -15,11 +15,14 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
+    private final Integer orderExpiryTimeInMinutes = 2;
+
     private final InventoryRepository inventoryRepository;
     LocalOrderRepository localOrderRepository;
     ProductRepository productRepository;
@@ -116,6 +119,8 @@ public class OrderService {
         order.setStatus(OrderStatus.PENDING);
         order.setCurrency("VND");
         order.setRestocked(false);
+        order.setCreatedAt(OffsetDateTime.now());
+        order.setExpiresAt(OffsetDateTime.now().plusMinutes(orderExpiryTimeInMinutes));
 
         BigDecimal total = BigDecimal.ZERO;
 

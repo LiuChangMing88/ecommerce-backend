@@ -46,6 +46,9 @@ public class LocalOrder {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
+    @Column(name = "expires_at")
+    private OffsetDateTime expiresAt;
+
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 

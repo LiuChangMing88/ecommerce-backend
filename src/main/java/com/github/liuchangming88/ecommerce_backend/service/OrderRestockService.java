@@ -26,34 +26,35 @@ public class OrderRestockService {
      * Process one batch of stale PENDING orders. Returns how many orders were restocked.
      */
     @Transactional
-    public int failAndRestockStale(OffsetDateTime cutoff, int batchSize) {
-        List<Long> ids = localOrderRepository.findStalePendingOrderIds(cutoff, PageRequest.of(0, batchSize));
+    public int failAndRestockExpired(OffsetDateTime now, int batchSize) {
+        List<Long> ids = localOrderRepository.findExpiredPendingOrderIds(now, org.springframework.data.domain.PageRequest.of(0, batchSize));
         if (ids.isEmpty()) return 0;
 
         int processed = 0;
         for (Long id : ids) {
             LocalOrder order = localOrderRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Order " + id + " vanished during cleanup"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Order " + id + " vanished during expiry pass"));
 
-            // Double‑check still qualifies (race safety)
+            // Double‑check (race safety) with current state
             if (order.getStatus() != OrderStatus.PENDING ||
                     order.isRestocked() ||
-                    order.getCreatedAt().isAfter(cutoff)) {
-                continue; // skip quietly
+                    order.getExpiresAt() == null ||
+                    !order.getExpiresAt().isBefore(now)) {
+                continue;
             }
 
-            // Mark failed
+            // OPTIONAL: guard against active payment (uncomment if you implement Strategy 3)
+            // if (paymentRepository.existsByLocalOrderIdAndStatusAndExpiresAtAfter(order.getId(), PaymentStatus.INITIATED, now)) {
+            //     continue;
+            // }
+
             order.setStatus(OrderStatus.FAILED);
-
-            // Restock once
             restock(order);
-
             processed++;
         }
 
         if (processed > 0) {
-            log.info("Order cleanup: failed & restocked {} stale orders (cutoff={}, batchSize={})",
-                    processed, cutoff, batchSize);
+            log.info("Order expiry: failed & restocked {} orders (now={}, batchSize={})", processed, now, batchSize);
         }
         return processed;
     }

@@ -5,14 +5,12 @@ import com.github.liuchangming88.ecommerce_backend.service.OrderRestockService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
 
-@Configuration
-@EnableScheduling
+@Component
 @RequiredArgsConstructor
 public class StaleOrderFailureScheduler {
 
@@ -21,22 +19,23 @@ public class StaleOrderFailureScheduler {
     private final OrderCleanupProperties props;
     private final OrderRestockService restockService;
 
-    // Runs every 30 seconds (after previous execution completes)
-    @Scheduled(fixedDelayString = "30000")
+    @Scheduled(fixedDelayString = "${orders.cleanup.delay-ms:30000}")
     public void run() {
         if (!props.isEnabled()) return;
 
-        OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(props.getFailureWindowMinutes());
-
         int total = 0;
         int batch;
+        // Capture a consistent 'now' for the entire loop pass; prevents a long run from drifting
+        OffsetDateTime now = OffsetDateTime.now();
         do {
-            batch = restockService.failAndRestockStale(cutoff, props.getBatchSize());
+            batch = restockService.failAndRestockExpired(now, props.getBatchSize());
             total += batch;
-        } while (batch == props.getBatchSize()); // loop until fewer than batch size
+            // Optional: refresh 'now' each iteration if you WANT drifting boundary
+            // now = OffsetDateTime.now();
+        } while (batch == props.getBatchSize());
 
         if (total > 0) {
-            log.info("Stale order cleanup cycle finished. Total processed: {}", total);
+            log.info("Order expiry cycle finished. Total processed: {}", total);
         }
     }
 }

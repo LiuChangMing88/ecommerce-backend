@@ -14,11 +14,6 @@ import org.springframework.stereotype.Component;
 @Setter
 public class OrderCleanupProperties {
     /**
-     * Minutes after creation a pending order is considered failed.
-     */
-    private int failureWindowMinutes = 10;
-
-    /**
      * Number of orders processed per batch iteration.
      */
     private int batchSize = 200;
