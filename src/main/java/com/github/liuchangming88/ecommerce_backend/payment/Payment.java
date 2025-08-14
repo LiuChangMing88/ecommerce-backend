@@ -51,9 +51,6 @@ public class Payment {
     @Column(name = "bank_code", length = 32)
     private String bankCode;
 
-    @Column(name = "secure_hash", length = 256)
-    private String secureHash;
-
     @Lob
     @Column(name = "raw_params")
     private String rawParams; // full query string or JSON of IPN/return for audit
