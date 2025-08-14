@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -137,7 +138,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
 
-    // TODO: add exception handlers to gracefully handle OAuth2 errors
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(OAuth2AuthenticationException.class)
+    public ErrorResponse handleOAuth2AuthenticationException(OAuth2AuthenticationException ex, HttpServletRequest request) {
+        logger.error("OAuth2 authentication exception: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
 
 
     private ErrorResponse buildErrorResponse(HttpStatus status, String message, HttpServletRequest request) {
