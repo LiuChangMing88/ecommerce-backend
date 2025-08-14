@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,7 +80,7 @@ public class ProductServiceTest {
         product.setName("Test Product");
         product.setShortDescription("Short description");
         product.setLongDescription("Long description");
-        product.setPrice(8.88);
+        product.setPrice(BigDecimal.valueOf(8.88));
         inventory.setId(1L);
         inventory.setQuantity(5L);
         inventory.setProduct(product);

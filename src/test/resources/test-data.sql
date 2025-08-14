@@ -26,21 +26,21 @@ INSERT INTO inventory (product_id, quantity) VALUES
     (4, 73),
     (5, 2);
 
-INSERT INTO local_order (address_id, local_user_id) VALUES
-    (1, 1),
-    (1, 1),
-    (1, 1),
-    (2, 3),
-    (2, 3);
+INSERT INTO local_order (address_id, local_user_id, status, total_amount, currency, created_at, restocked) VALUES
+      (1, 1, 'PENDING',  30.00, 'VND', CURRENT_TIMESTAMP, false),
+      (1, 1, 'PENDING', 100.00, 'VND', CURRENT_TIMESTAMP, false),
+      (1, 1, 'PENDING',  30.00, 'VND', CURRENT_TIMESTAMP, false),
+      (2, 3, 'PENDING',  60.00, 'VND', CURRENT_TIMESTAMP, false),
+      (2, 3, 'PENDING',  40.00, 'VND', CURRENT_TIMESTAMP, false);
 
-INSERT INTO local_order_quantities (local_order_id, product_id, quantity) VALUES
-    (1, 1, 5),
-    (1, 2, 5),
-    (2, 3, 5),
-    (2, 2, 5),
-    (2, 5, 5),
-    (3, 3, 5),
-    (4, 4, 5),
-    (4, 2, 5),
-    (5, 3, 5),
-    (5, 1, 5);
+INSERT INTO local_order_items (local_order_id, product_id, quantity, unit_price) VALUES
+    (1, 1, 5, 2),
+    (1, 2, 5, 4),
+    (2, 3, 5, 6),
+    (2, 2, 5, 4),
+    (2, 5, 5, 10),
+    (3, 3, 5, 6),
+    (4, 4, 5, 8),
+    (4, 2, 5, 4),
+    (5, 3, 5, 6),
+    (5, 1, 5, 2);

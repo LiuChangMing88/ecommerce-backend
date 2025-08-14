@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Entity
@@ -24,7 +26,7 @@ public class Product {
     private String longDescription;
 
     @Column(name = "price", nullable = false)
-    private Double price;
+    private BigDecimal price;
 
     @OneToOne(mappedBy = "product", cascade = {CascadeType.REMOVE, CascadeType.PERSIST, CascadeType.MERGE}, optional = false, orphanRemoval = true)
     private Inventory inventory;

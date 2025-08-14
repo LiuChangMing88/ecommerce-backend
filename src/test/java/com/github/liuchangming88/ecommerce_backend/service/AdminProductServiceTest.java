@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,7 +60,7 @@ public class AdminProductServiceTest {
         request.setName("New Product");
         request.setShortDescription("Short description");
         request.setLongDescription("Detailed description");
-        request.setPrice(99.99);
+        request.setPrice(BigDecimal.valueOf(99.99));
         request.setQuantity(100L);
 
         Product product = mapRequestToProduct(request);
@@ -112,7 +113,7 @@ public class AdminProductServiceTest {
         request.setName("Updated Product");
         request.setShortDescription("Short");
         request.setLongDescription("Long");
-        request.setPrice(10.0);
+        request.setPrice(BigDecimal.valueOf(10.0));
         request.setQuantity(50L);
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
@@ -135,7 +136,7 @@ public class AdminProductServiceTest {
         oldProduct.setName("Old product");
         oldProduct.setShortDescription("Old short");
         oldProduct.setLongDescription("Old long");
-        oldProduct.setPrice(55.0);
+        oldProduct.setPrice(BigDecimal.valueOf(55.0));
         oldProduct.setQuantity(20L);
 
         Product existingProduct = mapRequestToProduct(oldProduct);
@@ -144,7 +145,7 @@ public class AdminProductServiceTest {
         request.setName("Updated Product");
         request.setShortDescription("Updated short");
         request.setLongDescription("Updated long");
-        request.setPrice(75.0);
+        request.setPrice(BigDecimal.valueOf(75.0));
         request.setQuantity(40L);
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
@@ -225,7 +226,7 @@ public class AdminProductServiceTest {
         request.setName("Sample Product");
         request.setShortDescription("Short description");
         request.setLongDescription("Long description");
-        request.setPrice(99.99);
+        request.setPrice(BigDecimal.valueOf(99.99));
         request.setQuantity(50L);
 
         Product product = mapRequestToProduct(request);

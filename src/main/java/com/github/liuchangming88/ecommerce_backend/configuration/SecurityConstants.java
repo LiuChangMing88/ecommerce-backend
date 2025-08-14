@@ -24,7 +24,9 @@ public class SecurityConstants {
             "/v3/api-docs/**",
             "/login",
             "/oauth2/**",
-            "/login/oauth2/**"
+            "/login/oauth2/**",
+            "/payments/vnpay/ipn",
+            "/payments/vnpay/return"
     };
 
     // Convert to RequestMatchers for use elsewhere

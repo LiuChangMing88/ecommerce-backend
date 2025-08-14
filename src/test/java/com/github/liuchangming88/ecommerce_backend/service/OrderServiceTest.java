@@ -1,11 +1,11 @@
 package com.github.liuchangming88.ecommerce_backend.service;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressResponse;
-import com.github.liuchangming88.ecommerce_backend.api.model.OrderQuantitiesResponse;
+import com.github.liuchangming88.ecommerce_backend.api.model.OrderItemsResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.OrderResponse;
 import com.github.liuchangming88.ecommerce_backend.model.Address;
 import com.github.liuchangming88.ecommerce_backend.model.LocalOrder;
-import com.github.liuchangming88.ecommerce_backend.model.LocalOrderQuantities;
+import com.github.liuchangming88.ecommerce_backend.model.LocalOrderItems;
 import com.github.liuchangming88.ecommerce_backend.model.repository.LocalOrderRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,11 +36,11 @@ public class OrderServiceTest {
         Long userId = 1L;
 
         // Setup mock LocalOrder, quantities, and address
-        LocalOrderQuantities quantity = new LocalOrderQuantities();
-        List<LocalOrderQuantities> quantities = List.of(quantity);
+        LocalOrderItems quantity = new LocalOrderItems();
+        List<LocalOrderItems> quantities = List.of(quantity);
 
         LocalOrder order = new LocalOrder();
-        order.setQuantities(quantities);
+        order.setItems(quantities);
         order.setAddress(new Address());
         List<LocalOrder> orderList = List.of(order);
 
@@ -48,12 +48,12 @@ public class OrderServiceTest {
         when(localOrderRepository.findByLocalUser_Id(userId)).thenReturn(orderList);
 
         // Mocked DTOs
-        OrderQuantitiesResponse quantityResponse = new OrderQuantitiesResponse();
+        OrderItemsResponse quantityResponse = new OrderItemsResponse();
         AddressResponse addressResponse = new AddressResponse();
         OrderResponse orderResponse = new OrderResponse();
 
         // Stubbing mapping
-        when(modelMapper.map(quantity, OrderQuantitiesResponse.class)).thenReturn(quantityResponse);
+        when(modelMapper.map(quantity, OrderItemsResponse.class)).thenReturn(quantityResponse);
         when(modelMapper.map(order.getAddress(), AddressResponse.class)).thenReturn(addressResponse);
         when(modelMapper.map(order, OrderResponse.class)).thenReturn(orderResponse);
 
@@ -63,11 +63,11 @@ public class OrderServiceTest {
         // Verify
         Assertions.assertEquals(1, result.size());
         Assertions.assertEquals(orderResponse, result.get(0));
-        Assertions.assertEquals(List.of(quantityResponse), result.get(0).getOrderQuantitiesResponseList());
+        Assertions.assertEquals(List.of(quantityResponse), result.get(0).getItems());
         Assertions.assertEquals(addressResponse, result.get(0).getAddressResponse());
 
         verify(localOrderRepository, times(1)).findByLocalUser_Id(userId);
-        verify(modelMapper, times(1)).map(quantity, OrderQuantitiesResponse.class);
+        verify(modelMapper, times(1)).map(quantity, OrderItemsResponse.class);
         verify(modelMapper, times(1)).map(order.getAddress(), AddressResponse.class);
         verify(modelMapper, times(1)).map(order, OrderResponse.class);
     }

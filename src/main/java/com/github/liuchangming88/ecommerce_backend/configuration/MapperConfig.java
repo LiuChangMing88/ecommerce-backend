@@ -1,8 +1,8 @@
 package com.github.liuchangming88.ecommerce_backend.configuration;
 
-import com.github.liuchangming88.ecommerce_backend.api.model.OrderQuantitiesResponse;
+import com.github.liuchangming88.ecommerce_backend.api.model.OrderItemsResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
-import com.github.liuchangming88.ecommerce_backend.model.LocalOrderQuantities;
+import com.github.liuchangming88.ecommerce_backend.model.LocalOrderItems;
 import com.github.liuchangming88.ecommerce_backend.model.Product;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
@@ -27,11 +27,11 @@ public class MapperConfig {
                         ProductResponse::setQuantity);
 
         // Used in OrderService to map LocalOrder into OrderResponseBody
-        mapper.createTypeMap(LocalOrderQuantities.class, OrderQuantitiesResponse.class)
+        mapper.createTypeMap(LocalOrderItems.class, OrderItemsResponse.class)
                 .addMapping(src -> src.getProduct().getId(),
-                        OrderQuantitiesResponse::setProductId)
+                        OrderItemsResponse::setProductId)
                 .addMapping(src -> src.getProduct().getName(),
-                        OrderQuantitiesResponse::setProductName);
+                        OrderItemsResponse::setProductName);
 
         return mapper;
     }

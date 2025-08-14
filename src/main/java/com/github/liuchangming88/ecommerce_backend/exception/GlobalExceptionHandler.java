@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -87,6 +88,34 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
+        logger.error("Illegal argument exception: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IllegalStateException.class)
+    public ErrorResponse handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
+        logger.error("Illegal state exception: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        logger.error("Http message not readable: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(InsufficientStockException.class)
+    public ErrorResponse handleInsufficientStockException(InsufficientStockException ex, HttpServletRequest request) {
+        logger.error("Insufficient stock: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(MailException.class)
     public ErrorResponse handleMailException(MailException ex, HttpServletRequest request) {
@@ -107,6 +136,8 @@ public class GlobalExceptionHandler {
         logger.error("Access denied: {}", ex.getMessage());
         return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
+
+    // TODO: add exception handlers to gracefully handle OAuth2 errors
 
 
     private ErrorResponse buildErrorResponse(HttpStatus status, String message, HttpServletRequest request) {
