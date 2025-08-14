@@ -1,8 +1,8 @@
 package com.github.liuchangming88.ecommerce_backend.payment.vnpay;
 
 import com.github.liuchangming88.ecommerce_backend.exception.AuthorizationException;
-import com.github.liuchangming88.ecommerce_backend.model.LocalOrder;
-import com.github.liuchangming88.ecommerce_backend.model.OrderStatus;
+import com.github.liuchangming88.ecommerce_backend.model.order.LocalOrder;
+import com.github.liuchangming88.ecommerce_backend.model.order.OrderStatus;
 import com.github.liuchangming88.ecommerce_backend.payment.Payment;
 import com.github.liuchangming88.ecommerce_backend.payment.PaymentRepository;
 import com.github.liuchangming88.ecommerce_backend.payment.PaymentStatus;

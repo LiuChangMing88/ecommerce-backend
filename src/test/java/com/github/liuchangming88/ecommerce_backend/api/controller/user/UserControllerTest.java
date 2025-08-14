@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.liuchangming88.ecommerce_backend.api.model.AddressUpdateRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
 import com.github.liuchangming88.ecommerce_backend.exception.DuplicateResourceException;
-import com.github.liuchangming88.ecommerce_backend.service.UserService;
+import com.github.liuchangming88.ecommerce_backend.service.user.UserService;
 import com.github.liuchangming88.ecommerce_backend.util.TestDataUtil;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;

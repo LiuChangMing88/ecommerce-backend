@@ -1,9 +1,9 @@
 package com.github.liuchangming88.ecommerce_backend.security.oauth2.UserHandler;
 
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
-import com.github.liuchangming88.ecommerce_backend.model.Role;
-import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
-import com.github.liuchangming88.ecommerce_backend.service.EncryptionService;
+import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.user.Role;
+import com.github.liuchangming88.ecommerce_backend.model.user.repository.LocalUserRepository;
+import com.github.liuchangming88.ecommerce_backend.service.infrastructure.EncryptionService;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;

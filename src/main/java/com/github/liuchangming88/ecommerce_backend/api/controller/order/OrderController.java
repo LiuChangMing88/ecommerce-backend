@@ -2,8 +2,8 @@ package com.github.liuchangming88.ecommerce_backend.api.controller.order;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.CreateOrderRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.OrderResponse;
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
-import com.github.liuchangming88.ecommerce_backend.service.OrderService;
+import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.service.order.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

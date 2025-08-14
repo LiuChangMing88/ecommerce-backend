@@ -1,6 +1,6 @@
 package com.github.liuchangming88.ecommerce_backend.jobs;
 
-import com.github.liuchangming88.ecommerce_backend.service.PaymentMaintenanceService;
+import com.github.liuchangming88.ecommerce_backend.service.payment.PaymentMaintenanceService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

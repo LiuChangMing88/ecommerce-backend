@@ -1,7 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.api.controller.product;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
-import com.github.liuchangming88.ecommerce_backend.service.ProductService;
+import com.github.liuchangming88.ecommerce_backend.service.product.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

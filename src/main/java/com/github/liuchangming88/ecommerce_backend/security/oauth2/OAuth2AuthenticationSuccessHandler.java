@@ -1,10 +1,9 @@
 package com.github.liuchangming88.ecommerce_backend.security.oauth2;
 
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
-import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
-import com.github.liuchangming88.ecommerce_backend.service.JwtService;
+import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.user.repository.LocalUserRepository;
+import com.github.liuchangming88.ecommerce_backend.service.infrastructure.JwtService;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;

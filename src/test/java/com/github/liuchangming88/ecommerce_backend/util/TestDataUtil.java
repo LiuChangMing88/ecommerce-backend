@@ -2,8 +2,8 @@ package com.github.liuchangming88.ecommerce_backend.util;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.LoginRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.RegistrationRequest;
-import com.github.liuchangming88.ecommerce_backend.model.Address;
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.user.Address;
+import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
 
 public class TestDataUtil {
     static public RegistrationRequest createTestRegisterRequest() {

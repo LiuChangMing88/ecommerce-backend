@@ -2,8 +2,8 @@ package com.github.liuchangming88.ecommerce_backend.configuration;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.OrderItemsResponse;
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
-import com.github.liuchangming88.ecommerce_backend.model.LocalOrderItems;
-import com.github.liuchangming88.ecommerce_backend.model.Product;
+import com.github.liuchangming88.ecommerce_backend.model.order.LocalOrderItems;
+import com.github.liuchangming88.ecommerce_backend.model.product.Product;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;

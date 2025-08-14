@@ -9,11 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
-import com.github.liuchangming88.ecommerce_backend.model.Role;
-import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
-import com.github.liuchangming88.ecommerce_backend.service.EncryptionService;
-import org.junit.jupiter.api.BeforeEach;
+import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.user.Role;
+import com.github.liuchangming88.ecommerce_backend.model.user.repository.LocalUserRepository;
+import com.github.liuchangming88.ecommerce_backend.service.infrastructure.EncryptionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

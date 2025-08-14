@@ -1,6 +1,6 @@
 package com.github.liuchangming88.ecommerce_backend.payment;
 
-import com.github.liuchangming88.ecommerce_backend.model.LocalOrder;
+import com.github.liuchangming88.ecommerce_backend.model.order.LocalOrder;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

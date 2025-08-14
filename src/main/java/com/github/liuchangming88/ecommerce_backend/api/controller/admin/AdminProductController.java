@@ -3,7 +3,7 @@ package com.github.liuchangming88.ecommerce_backend.api.controller.admin;
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductQuantityUpdateRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductRequest;
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
-import com.github.liuchangming88.ecommerce_backend.service.AdminProductService;
+import com.github.liuchangming88.ecommerce_backend.service.product.AdminProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
