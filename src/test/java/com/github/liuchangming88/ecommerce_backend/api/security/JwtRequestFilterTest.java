@@ -1,8 +1,8 @@
 package com.github.liuchangming88.ecommerce_backend.api.security;
 
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
-import com.github.liuchangming88.ecommerce_backend.model.repository.LocalUserRepository;
-import com.github.liuchangming88.ecommerce_backend.service.JwtService;
+import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.user.repository.LocalUserRepository;
+import com.github.liuchangming88.ecommerce_backend.service.infrastructure.JwtService;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

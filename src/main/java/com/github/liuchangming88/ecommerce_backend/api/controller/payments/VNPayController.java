@@ -1,9 +1,8 @@
 package com.github.liuchangming88.ecommerce_backend.api.controller.payments;
 
-import com.github.liuchangming88.ecommerce_backend.model.LocalOrder;
-import com.github.liuchangming88.ecommerce_backend.model.LocalUser;
-import com.github.liuchangming88.ecommerce_backend.model.repository.LocalOrderRepository;
-import com.github.liuchangming88.ecommerce_backend.payment.PaymentRepository;
+import com.github.liuchangming88.ecommerce_backend.model.order.LocalOrder;
+import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
+import com.github.liuchangming88.ecommerce_backend.model.order.repository.LocalOrderRepository;
 import com.github.liuchangming88.ecommerce_backend.payment.dto.IpnResponse;
 import com.github.liuchangming88.ecommerce_backend.payment.dto.PayResponse;
 import com.github.liuchangming88.ecommerce_backend.payment.vnpay.VNPayIpnService;

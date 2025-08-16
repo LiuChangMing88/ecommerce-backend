@@ -1,6 +1,6 @@
 package com.github.liuchangming88.ecommerce_backend.payment;
 
-import com.github.liuchangming88.ecommerce_backend.model.LocalOrder;
+import com.github.liuchangming88.ecommerce_backend.model.order.LocalOrder;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,9 +50,6 @@ public class Payment {
 
     @Column(name = "bank_code", length = 32)
     private String bankCode;
-
-    @Column(name = "secure_hash", length = 256)
-    private String secureHash;
 
     @Lob
     @Column(name = "raw_params")

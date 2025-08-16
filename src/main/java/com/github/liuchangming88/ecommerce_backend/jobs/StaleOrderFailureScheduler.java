@@ -1,7 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.jobs;
 
 import com.github.liuchangming88.ecommerce_backend.configuration.OrderCleanupProperties;
-import com.github.liuchangming88.ecommerce_backend.service.OrderRestockService;
+import com.github.liuchangming88.ecommerce_backend.service.order.OrderRestockService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

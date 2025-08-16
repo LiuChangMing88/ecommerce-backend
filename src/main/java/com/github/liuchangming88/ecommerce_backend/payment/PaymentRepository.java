@@ -28,7 +28,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
                p.responseCode = :respCode,
                p.transactionNo = :txnNo,
                p.bankCode = :bankCode,
-               p.secureHash = :secureHash,
                p.rawParams = :rawParams,
                p.updatedAt = :now
          WHERE p.id = :id

@@ -1,7 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.api.controller.auth;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.*;
-import com.github.liuchangming88.ecommerce_backend.service.UserService;
+import com.github.liuchangming88.ecommerce_backend.service.user.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
