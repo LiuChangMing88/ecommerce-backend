@@ -46,6 +46,10 @@ Designed with clean architecture principles, defensive validation, rich error se
 
 ---
 
+## ✅ Quality & CI
+![Lines](coverage.svg) ![Branches](branches.svg)
+
+(Generated on each main branch build)
 
 ---
 
