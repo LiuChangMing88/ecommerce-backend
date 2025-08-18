@@ -180,12 +180,12 @@
 										<limit>
 											<counter>INSTRUCTION</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.60</minimum>
+											<minimum>0.85</minimum>
 										</limit>
 										<limit>
 											<counter>BRANCH</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.40</minimum>
+											<minimum>0.75</minimum>
 										</limit>
 									</limits>
 								</rule>
@@ -213,8 +213,8 @@
 						<param>com.github.liuchangming88.ecommerce_backend.security.*</param>
 					</targetClasses>
 					<threads>4</threads>
-					<mutationThreshold>60</mutationThreshold>
-					<coverageThreshold>60</coverageThreshold>
+					<mutationThreshold>80</mutationThreshold>
+					<coverageThreshold>80</coverageThreshold>
 					<timestampedReports>false</timestampedReports>
 					<outputFormats>
 						<param>HTML</param>
@@ -223,8 +223,6 @@
 					<excludedClasses>
 						<param>com.github.liuchangming88.ecommerce_backend.security.oauth2.OAuth2UserServiceConfig</param>
 					</excludedClasses>
-					<threads>4</threads>
-					<timestampedReports>false</timestampedReports>
 				</configuration>
 			</plugin>
 		</plugins>
