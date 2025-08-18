@@ -213,6 +213,17 @@
 						<param>com.github.liuchangming88.ecommerce_backend.security.*</param>
 					</targetClasses>
 					<threads>4</threads>
+					<mutationThreshold>60</mutationThreshold>
+					<coverageThreshold>60</coverageThreshold>
+					<timestampedReports>false</timestampedReports>
+					<outputFormats>
+						<param>HTML</param>
+						<param>XML</param>
+					</outputFormats>
+					<excludedClasses>
+						<param>com.github.liuchangming88.ecommerce_backend.security.oauth2.OAuth2UserServiceConfig</param>
+					</excludedClasses>
+					<threads>4</threads>
 					<timestampedReports>false</timestampedReports>
 				</configuration>
 			</plugin>
