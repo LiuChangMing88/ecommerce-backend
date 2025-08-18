@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ main, master ]
   push:
-    branches: [ main, master ]
+    branches: [ main, master, CI-github-actions ]
   workflow_dispatch:
 
 permissions:
@@ -80,7 +80,7 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Run PIT
-        run: mvn -B org.pitest:pitest-maven:mutationCoverage
+        run: mvn -B clean test org.pitest:pitest-maven:mutationCoverage
       - name: Upload PIT Report
         uses: actions/upload-artifact@v4
         with:
