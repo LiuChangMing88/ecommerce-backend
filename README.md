@@ -44,6 +44,12 @@ Designed with clean architecture principles, defensive validation, rich error se
 [![Tests Video](docs/media/Tests.png)](https://drive.google.com/file/d/1aDUHPhIPLXed3YhhRp_RlnAL_n7lnJ0Q/view?usp=drive_link)
 - 144 Tests with 93 unit and 51 integration tests. If any feature fails, we will know from these tests.
 
+---
+
+## ✅ Quality & CI
+![Lines](coverage.svg) ![Branches](branches.svg)
+
+(Generated on each main branch build)
 
 ---
 
