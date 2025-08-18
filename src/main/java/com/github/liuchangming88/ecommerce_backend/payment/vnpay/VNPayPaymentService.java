@@ -96,7 +96,6 @@ public class VNPayPaymentService {
         p.setAmount(order.getTotalAmount());
         p.setCurrency(order.getCurrency());
         p.setTxnRef(txnRef);
-        p.setStatus(PaymentStatus.INITIATED);
         p.setClientIp(clientIp);
         p.setExpiresAt(order.getExpiresAt());
         paymentRepository.save(p);

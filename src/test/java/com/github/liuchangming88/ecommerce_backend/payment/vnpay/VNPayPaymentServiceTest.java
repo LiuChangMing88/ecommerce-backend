@@ -311,6 +311,43 @@ public class VNPayPaymentServiceTest {
         assertThat(resp.getTxnRef()).isEqualTo("REF-KEEP");
     }
 
+    @Test
+    @DisplayName("New payment persists with linked LocalOrder (kills removed setLocalOrder mutant)")
+    void newPaymentSetsLocalOrder() {
+        // Arrange
+        LocalOrder order = newOrder(OrderStatus.PENDING, FUTURE_EXPIRY);
+
+        when(paymentRepository.findByOrderProviderAndStatuses(anyLong(), anyString(), anyList()))
+                .thenReturn(Collections.emptyList());
+
+        ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment p = invocation.getArgument(0);
+            if (p.getCreatedAt() == null) p.setCreatedAt(NOW);
+            return p;
+        });
+
+        // Act
+        PayResponse resp = service.initiateOrReusePayment(order, CLIENT_IP, USER_ID);
+
+        // Assert
+        verify(paymentRepository).save(captor.capture());
+        Payment saved = captor.getValue();
+
+        // Core assertion to kill the mutant
+        assertThat(saved.getLocalOrder())
+                .as("localOrder must be set on persisted Payment")
+                .isNotNull()
+                .isSameAs(order); // if newOrder returns same instance used by service
+
+        // If IDs are populated and you prefer ID check (optional / alternative):
+        // assertThat(saved.getLocalOrder().getId()).isEqualTo(order.getId());
+
+        // Sanity: still validating other critical fields so future removed-setter mutants also die
+        assertThat(saved.getStatus()).isEqualTo(PaymentStatus.INITIATED);
+        assertThat(resp.getTxnRef()).isEqualTo(saved.getTxnRef());
+    }
+
     @Nested
     @DisplayName("Edge & Formatting")
     class EdgeAndFormatting {
