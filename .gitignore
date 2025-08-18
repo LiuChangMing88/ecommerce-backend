@@ -33,7 +33,6 @@ build/
 .vscode/
 
 ### KEYS ###
-application-secrets.properties
 .env
 
 ### sql
