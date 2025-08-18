@@ -70,7 +70,7 @@ jobs:
     name: Mutation Test (PIT)
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: test
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 21
@@ -85,5 +85,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pit-report
-          path: "target/pit-reports"
+          path: target/pit-reports
           retention-days: 7
