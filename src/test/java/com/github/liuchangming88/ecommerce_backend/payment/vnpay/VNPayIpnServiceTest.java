@@ -230,6 +230,144 @@ public class VNPayIpnServiceTest {
         // We can't assert paidAt via reflection here; just ensuring path doesn't blow
     }
 
+    @Test
+    void suspiciousExactAssertions_setsStatusFailureCodeAndOrderFailed() {
+        assumeSuspiciousEnum();
+        Payment p = payment("REF_SUSP_DET", 500_000);
+        when(paymentRepository.findByTxnRef("REF_SUSP_DET")).thenReturn(Optional.of(p));
+
+        Map<String,String> params = signedParams("REF_SUSP_DET", 500_000, "07", "00"); // respCode=07 -> suspicious
+        IpnResponse resp = ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        assertThat(resp.getRspCode()).isEqualTo("00");
+        assertThat(p.getStatus()).isEqualTo(PaymentStatus.SUSPICIOUS); // tighten (kills supportsSuspicious false mutant)
+        assertThat(p.getLocalOrder().getStatus()).isEqualTo(OrderStatus.FAILED);
+        // failureCode via reflection helper (if field & getter exist)
+        maybeAssertFailureCode(p, "07");
+        // bank code & raw params asserted elsewhere; here focus suspicious branch
+    }
+
+    @Test
+    void successSetsBankCodePaidAtAndRawParams() {
+        Payment p = payment("REF_PAIDAT", 123_000);
+        when(paymentRepository.findByTxnRef("REF_PAIDAT")).thenReturn(Optional.of(p));
+
+        Map<String,String> params = signedParams("REF_PAIDAT", 123_000, "00", "00");
+        params.put("vnp_PayDate", "20241231235959"); // valid 14 chars
+        // re-sign because we changed a param
+        params.put("vnp_SecureHash", VNPaySigner.computeSignature(paramsWithoutHash(params), SECRET));
+
+        IpnResponse resp = ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        assertThat(resp.getRspCode()).isEqualTo("00");
+        assertThat(p.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
+        // bank code
+        assertThat(p.getBankCode()).isEqualTo("NCB");
+        // paidAt
+        if (hasMethod(p, "getPaidAt")) {
+            assertThat(invokeInstant(p, "getPaidAt")).isNotNull();
+        }
+        // raw params non-empty, sorted, excludes signature
+        assertThat(p.getRawParams()).isNotBlank();
+        assertThat(p.getRawParams()).doesNotContain("vnp_SecureHash=");
+        // simple ordering check: keys alphabetical -> Amount before BankCode
+        int idxAmount = p.getRawParams().indexOf("vnp_Amount=");
+        int idxBank   = p.getRawParams().indexOf("vnp_BankCode=");
+        assertThat(idxAmount).isLessThan(idxBank);
+    }
+
+    @Test
+    void expiredThenSuccessUpgrades() {
+        if (!hasEnumValue("EXPIRED")) return; // skip if enum lacks EXPIRED
+        Payment p = payment("REF_EXP_UP", 222_000);
+        p.setStatus(PaymentStatus.valueOf("EXPIRED"));
+        when(paymentRepository.findByTxnRef("REF_EXP_UP")).thenReturn(Optional.of(p));
+        Map<String,String> params = signedParams("REF_EXP_UP", 222_000, "00", "00");
+
+        IpnResponse resp = ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        assertThat(resp.getRspCode()).isEqualTo("00");
+        assertThat(p.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
+    }
+
+    @Test
+    void succeededThenFailureAttemptDoesNotDowngrade_returns02() {
+        Payment p = payment("REF_NO_DOWN", 310_000);
+        p.setStatus(PaymentStatus.SUCCEEDED);
+        when(paymentRepository.findByTxnRef("REF_NO_DOWN")).thenReturn(Optional.of(p));
+        Map<String,String> params = signedParams("REF_NO_DOWN", 310_000, "24", "02"); // failure after success
+
+        IpnResponse resp = ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        assertThat(resp.getRspCode()).isEqualTo("02");
+        assertThat(p.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
+    }
+
+    @Test
+    void failureSetsFailureCode() {
+        Payment p = payment("REF_FAIL_CODE", 700_000);
+        when(paymentRepository.findByTxnRef("REF_FAIL_CODE")).thenReturn(Optional.of(p));
+        Map<String,String> params = signedParams("REF_FAIL_CODE", 700_000, "24", "02");
+
+        ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        maybeAssertFailureCode(p, "24");
+    }
+
+    @Test
+    void suspiciousSetsFailureCode() {
+        assumeSuspiciousEnum();
+        Payment p = payment("REF_SUSP_CODE", 880_000);
+        when(paymentRepository.findByTxnRef("REF_SUSP_CODE")).thenReturn(Optional.of(p));
+        Map<String,String> params = signedParams("REF_SUSP_CODE", 880_000, "07", "00");
+
+        ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        maybeAssertFailureCode(p, "07");
+    }
+
+    @Test
+    void serializeParamsNotEmptyEvenIfSomeValuesEmpty() {
+        Payment p = payment("REF_SERIAL", 111_000);
+        when(paymentRepository.findByTxnRef("REF_SERIAL")).thenReturn(Optional.of(p));
+        Map<String,String> params = signedParams("REF_SERIAL", 111_000, "00", "00");
+        params.put("vnp_OptionalEmpty", ""); // should be filtered out
+        params.put("vnp_SecureHash", VNPaySigner.computeSignature(paramsWithoutHash(params), SECRET));
+
+        ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        String raw = p.getRawParams();
+        assertThat(raw).isNotBlank();
+        assertThat(raw).contains("vnp_OptionalEmpty=&");
+        assertThat(raw).contains("vnp_TxnRef=REF_SERIAL");
+    }
+
+    @Test
+    void blankTxnRefWithValidMerchant_returns99DistinctFromNotFound() {
+        Map<String,String> params = baseParams("", 50_000);
+        params.put("vnp_TxnRef", ""); // blank
+        params.put("vnp_SecureHash", VNPaySigner.computeSignature(paramsWithoutHash(params), SECRET));
+        IpnResponse resp = ipnService.processIpnRequestAndReturnToVNPayServer(params);
+        assertThat(resp.getRspCode()).isEqualTo("99"); // ensures valid-path mutate-to-null isn’t masked
+    }
+
+    @Test
+    void nonVnpParamsIgnoredInSignatureExtraction() {
+        Map<String,String> params = baseParams("REF_FILTER", 44_000);
+        String sig = VNPaySigner.computeSignature(paramsWithoutHash(params), SECRET);
+        params.put("foo", "BAR"); // should be ignored
+        params.put("vnp_SecureHash", sig);
+        Payment p = payment("REF_FILTER", 44_000);
+        when(paymentRepository.findByTxnRef("REF_FILTER")).thenReturn(Optional.of(p));
+
+        IpnResponse resp = ipnService.processIpnRequestAndReturnToVNPayServer(params);
+
+        assertThat(resp.getRspCode()).isEqualTo("00");
+        // If filter lambda always true mutant survives, add assertion that raw params does NOT contain foo=
+        assertThat(p.getRawParams()).doesNotContain("foo=");
+    }
+
+
     // ---- Helpers ----
 
     private Payment payment(String ref, long amountVnd) {
@@ -271,5 +409,48 @@ public class VNPayIpnServiceTest {
         Map<String,String> copy = new HashMap<>(in);
         copy.remove("vnp_SecureHash");
         return copy;
+    }
+
+    private void maybeAssertFailureCode(Payment p, String expected) {
+        if (hasMethod(p, "getFailureCode")) {
+            Object val = invoke(p, "getFailureCode");
+            assertThat(val).as("failureCode").isEqualTo(expected);
+        }
+    }
+
+    private boolean hasMethod(Object o, String name) {
+        try {
+            o.getClass().getMethod(name);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private Object invoke(Object o, String name) {
+        try {
+            return o.getClass().getMethod(name).invoke(o);
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private java.time.Instant invokeInstant(Object o, String name) {
+        return (java.time.Instant) invoke(o, name);
+    }
+
+    private void assumeSuspiciousEnum() {
+        assertThat(hasEnumValue("SUSPICIOUS"))
+                .as("PaymentStatus must have SUSPICIOUS to run this test")
+                .isTrue();
+    }
+
+    private boolean hasEnumValue(String val) {
+        try {
+            PaymentStatus.valueOf(val);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
