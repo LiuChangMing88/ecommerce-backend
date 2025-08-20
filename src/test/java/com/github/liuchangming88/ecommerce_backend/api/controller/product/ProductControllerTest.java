@@ -26,8 +26,8 @@ public class ProductControllerTest {
         mockMvc.perform(
                 MockMvcRequestBuilders.get("/products")
         ).andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(5)))
-                .andExpect(jsonPath("$[0].name").value("Product #1"));
+                .andExpect(jsonPath("$.content", hasSize(5)))
+                .andExpect(jsonPath("$.content[0].name").value("Product #1"));
     }
 
     @Test

@@ -13,6 +13,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -21,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,18 +50,19 @@ public class ProductServiceTest {
         product1.setName("Product #1");
 
         Product product2 = new Product();
-        product1.setName("Product #2");
-        List<Product> products = List.of(product1, product2);
+        product2.setName("Product #2");
 
-        when(productRepository.findAll()).thenReturn(products);
+        Page<Product> products = new PageImpl<>(List.of(product1, product2));
+
+        when(productRepository.findAll(any(Pageable.class))).thenReturn(products);
 
         // Act
-        List<ProductResponse> result = productService.getAllProducts();
+        Page<ProductResponse> result = productService.getAllProducts(0, 10);
 
         // Assert
-        assertEquals(2, result.size());
-        assertEquals(product1.getName(), result.get(0).getName());
-        assertEquals(product2.getName(), result.get(1).getName());
+        assertEquals(2, result.getContent().size());
+        assertEquals(product1.getName(), result.getContent().get(0).getName());
+        assertEquals(product2.getName(), result.getContent().get(1).getName());
     }
 
     @Test

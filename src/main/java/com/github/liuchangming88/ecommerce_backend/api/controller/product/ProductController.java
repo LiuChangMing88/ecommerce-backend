@@ -2,28 +2,29 @@ package com.github.liuchangming88.ecommerce_backend.api.controller.product;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
 import com.github.liuchangming88.ecommerce_backend.service.product.ProductService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping(path = "/products")
 public class ProductController {
-    ProductService productService;
+    private final ProductService productService;
 
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts () {
-        List<ProductResponse> allProducts = productService.getAllProducts();
-        return new ResponseEntity<>(allProducts,HttpStatus.OK);
+    public ResponseEntity<Page<ProductResponse>> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<ProductResponse> allProducts = productService.getAllProducts(page, size);
+        return new ResponseEntity<>(allProducts, HttpStatus.OK);
     }
 
     @GetMapping(path = "/{productId}")
@@ -31,3 +32,4 @@ public class ProductController {
         return new ResponseEntity<>(productService.getProduct(productId), HttpStatus.OK);
     }
 }
+

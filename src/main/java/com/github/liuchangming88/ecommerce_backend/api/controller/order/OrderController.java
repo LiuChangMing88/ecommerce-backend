@@ -5,6 +5,7 @@ import com.github.liuchangming88.ecommerce_backend.api.model.OrderResponse;
 import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
 import com.github.liuchangming88.ecommerce_backend.service.order.OrderService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,8 +26,11 @@ public class OrderController {
 
     @PreAuthorize("hasRole('USER')")
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getAllOrders(@AuthenticationPrincipal LocalUser user) {
-        List<OrderResponse> allOrdersList = orderService.getAllOrders(user.getId());
+    public ResponseEntity<Page<OrderResponse>> getAllOrders(
+            @AuthenticationPrincipal LocalUser user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<OrderResponse> allOrdersList = orderService.getAllOrders(user.getId(), page, size);
         return new ResponseEntity<>(allOrdersList, HttpStatus.OK);
     }
 
