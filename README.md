@@ -1,6 +1,8 @@
 # Ecommerce Backend (Spring Boot)
 
-Robust, production-oriented backend for an e-commerce platform implementing secure auth (password + OAuth2/OIDC), robust payment integration (VNPay redirect + IPN), resilient order & inventory lifecycle, RBAC authorization and disciplined testing (93 unit + 51 integration tests).  
+Robust, production-oriented backend for an e-commerce platform implementing secure auth (password + OAuth2/OIDC), robust payment integration (VNPay redirect + IPN), resilient order & inventory lifecycle, RBAC authorization and disciplined testing (144 unit + 51 integration tests).
+
+Deployed on AWS (t3.small for app + smtp4dev + Redis, t3.micro for DB) using Docker. Load tested using k6, implemented pagination and redis caching to increase performance.
 
 Designed with clean architecture principles, defensive validation, rich error semantics, and maintainability in mind — built to showcase professional backend engineering craft.
 
@@ -14,8 +16,11 @@ Designed with clean architecture principles, defensive validation, rich error se
 | Payments | VNPay integration: redirect URL generation, IPN listener, secure return endpoint, idempotent status updates                          |
 | Code Quality | Clean separation of concerns, validation & rich error responses, frequent refactors to maintain code clarity and extensibility       |
 | Security | JWT (stateless), RBAC (USER / ADMIN), custom filter, global exception mapping, defensive error messages, duplication guards.         |
-| Reliability | 93 unit + 51 integration tests; services & controllers covered. Edge cases covered                                                   |
+| Reliability | 144 unit + 51 integration tests; services & controllers covered. Edge cases covered                                                  |
 | Observability | Structured logging around payment IPN & auth flows.                                                                                  |
+| CI/CD | GitHub Actions pipeline with Jacoco code coverage and PITest mutation testing; thresholds enforced to fail builds on low quality/coverage. |
+| Deployment | Dockerfile for containerization; deployed on AWS EC2 (t3.small for app + smtp4dev + Redis, t3.micro for DB). |
+| Performance | Pagination and Redis caching for scalability; k6 load testing (100 VUs for 1h) shows improved response times and throughput. |
 
 ---
 
@@ -42,14 +47,16 @@ Designed with clean architecture principles, defensive validation, rich error se
 
 ### Thorough testing
 [![Tests Video](docs/media/Tests.png)](https://drive.google.com/file/d/1aDUHPhIPLXed3YhhRp_RlnAL_n7lnJ0Q/view?usp=drive_link)
-- 144 Tests with 93 unit and 51 integration tests. If any feature fails, we will know from these tests.
+- 195 Tests with 144 unit and 51 integration tests. If any feature fails, we will know from these tests.
 
 ---
 
 ## ✅ Quality & CI
-![Lines](.github/badges/jacoco.svg) ![Branches](/.github/badges/branches.svg)
+![Lines](.github/badges/jacoco.svg) ![Branches](.github/badges/branches.svg)
 
 (Generated on each main branch build)
+
+GitHub Actions CI pipeline includes Jacoco for code coverage analysis and PITest for mutation testing, with enforced thresholds—if coverage or mutation survival rates fall below set values, the build fails to maintain high test quality.
 
 ---
 
@@ -60,9 +67,10 @@ Designed with clean architecture principles, defensive validation, rich error se
 | Language | Java                                                             |
 | Framework | Spring Boot (Web, Security, Data JPA, Scheduling, OAuth2 Client) |
 | Auth | JWT (custom service), OAuth2/OIDC providers                      |
-| Persistence | PostGreSQL                                                       |
-| Build | Maven                                 |
-| Tests | JUnit, Spring Test, (Mocks for external calls)                   |
+| Persistence | PostgreSQL                                                       |
+| Caching | Redis                                                            |
+| Build | Maven, GitHub Actions CI                                         |
+| Tests | JUnit, Spring Test, (Mocks for external calls), PITest (mutation testing) |
 | Security | BCryptPasswordEncoder                                            |
 | Email | SMTP-backed EmailService                                         |
 | Payments | VNPay integration (custom signature + IPN handling)              |
@@ -79,6 +87,7 @@ Designed with clean architecture principles, defensive validation, rich error se
 - Administration (User + Product management)
 - Infrastructure Services (EmailService, JwtService, TokenService, EncryptionService)
 - Scheduling (expire Orders + Payments, release inventory atomically)
+- Performance (Pagination, Redis caching for high-traffic endpoints)
 
 ---
 
@@ -105,6 +114,15 @@ docker run -d --name smtp4dev -p 25:25 -p 5000:80 rnwood/smtp4dev:latest
 ./mvnw test              #
 ```
 
+Alternatively, build a Docker image for deployment:
+
+```bash
+# Build Docker image
+docker build -t ecommerce-backend .
+```
+
+For cloud deployment (e.g., AWS EC2), use the Dockerfile to create images. Example setup: t3.small instance for the application container + smtp4dev + Redis, and t3.micro for the PostgreSQL database.
+
 Environment Variables (sample – adapt):
 ```
 DB_URL=jdbc:postgresql://localhost:5432/ecommerce
@@ -112,7 +130,7 @@ DB_USER=...
 DB_PASS=...
 JWT_SECRET=...
 OAUTH_GOOGLE_CLIENT_ID=...
-OAUTH_GOOGLE_CLIENT_SECRET=...
+OA，除过GOOGLE_CLIENT_SECRET=...
 SMTP_HOST=...
 SMTP_USER=...
 SMTP_PASS=...
@@ -127,6 +145,52 @@ payment.vnpay.tmn-code=${VNP_TMNCODE}
 payment.vnpay.hash-secret=${VNP_HASHSECRET}
 ...
 ```
+
+---
+
+## ⚡ Performance Optimization & Load Testing
+
+To enhance scalability, pagination has been added to listing endpoints, and Redis caching has been integrated for frequently accessed data (e.g., product listings).
+
+The application was deployed on AWS EC2 (t3.small for app + smtp4dev + Redis, t3.micro for DB) and stress-tested using k6 from a local machine, simulating 100 virtual users (VUs) with realistic ecommerce requests (login, registering, product browsing, ordering) over 1 hour.
+
+### Before Redis Caching:
+```
+HTTP
+  http_req_duration..............: avg=132.54ms min=30.73ms med=91.04ms max=1.75s p(90)=293.92ms p(95)=372.41ms
+    { expected_response:true }...: avg=132.58ms min=30.73ms med=91.09ms max=1.75s p(90)=293.97ms p(95)=372.44ms
+  http_req_failed................: 0.04%  103 out of 211500
+  http_reqs......................: 211500 54.159596/s
+
+EXECUTION
+  iteration_duration.............: avg=3.24s    min=1.03s   med=3.18s   max=7.24s p(90)=5.18s    p(95)=5.32s   
+  iterations.....................: 115753 29.638743/s
+  vus............................: 1      min=0             max=100
+  vus_max........................: 100    min=100           max=100
+```
+
+### After Redis Caching:
+```
+HTTP
+  http_req_duration..............: avg=110.64ms min=30.34ms med=51.03ms max=2.1s  p(90)=261.7ms  p(95)=336.71ms
+    { expected_response:true }...: avg=110.65ms min=30.34ms med=51.04ms max=2.1s  p(90)=261.72ms p(95)=336.74ms
+  http_req_failed................: 0.04%  90 out of 213913
+  http_reqs......................: 213913 54.77601/s
+
+EXECUTION
+  iteration_duration.............: avg=3.2s     min=1.03s   med=3.15s   max=8.05s p(90)=5.15s    p(95)=5.28s   
+  iterations.....................: 117034 29.968518/s
+  vus............................: 1      min=0            max=100
+  vus_max........................: 100    min=100          max=100
+```
+
+Key improvements: Reduced average response time (132.54ms → 110.64ms), median (91.04ms → 51.03ms), and increased throughput (54.16 req/s → 54.78 req/s) with similar failure rates.
+
+| Metric | Before Caching | After Redis Caching & Pagination | Improvement |
+|---|---|---|---|
+| **Average HTTP Request Duration** | 132.54ms | 110.64ms | **~16.4% faster** |
+| Median HTTP Request Duration | 91.04ms | 51.03ms | **~44% faster** |
+| 95th Percentile | 372.41ms | 336.71ms | **~9.5% faster** |
 
 ---
 
