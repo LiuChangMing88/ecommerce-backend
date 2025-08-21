@@ -48,7 +48,7 @@ public class OrderService {
     public Page<OrderResponse> getAllOrders(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<LocalOrder> localOrdersPage = localOrderRepository.findByLocalUser_Id(userId, pageable);
+        Page<LocalOrder> localOrdersPage = localOrderRepository.findByLocalUser_IdAndStatus(userId, OrderStatus.PENDING, pageable);
 
         return localOrdersPage.map(order -> {
             // Map items

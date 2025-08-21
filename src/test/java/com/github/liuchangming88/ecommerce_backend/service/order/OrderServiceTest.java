@@ -79,7 +79,7 @@ class OrderServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<LocalOrder> orderPage = new PageImpl<>(List.of(order), pageable, 1);
 
-        when(localOrderRepository.findByLocalUser_Id(userId, pageable)).thenReturn(orderPage);
+        when(localOrderRepository.findByLocalUser_IdAndStatus(userId, OrderStatus.PENDING, pageable)).thenReturn(orderPage);
 
         // Prepare DTO mappings
         OrderItemsResponse lineDto = new OrderItemsResponse();

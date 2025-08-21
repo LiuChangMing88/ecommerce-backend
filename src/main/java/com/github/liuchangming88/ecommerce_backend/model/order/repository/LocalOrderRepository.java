@@ -1,6 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.model.order.repository;
 
 import com.github.liuchangming88.ecommerce_backend.model.order.LocalOrder;
+import com.github.liuchangming88.ecommerce_backend.model.order.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,7 @@ public interface LocalOrderRepository extends JpaRepository<LocalOrder, Long> {
 
     List<LocalOrder> findByLocalUser_Id(Long id);
     Page<LocalOrder> findByLocalUser_Id(Long userId, Pageable pageable);
+    Page<LocalOrder> findByLocalUser_IdAndStatus(Long userId, OrderStatus status, Pageable pageable);
 
     /**
      * Returns IDs of PENDING orders whose expiresAt has passed and not yet restocked.
