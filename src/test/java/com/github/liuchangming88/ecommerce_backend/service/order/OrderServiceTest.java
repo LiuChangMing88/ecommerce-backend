@@ -26,6 +26,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -64,12 +68,20 @@ class OrderServiceTest {
     @Test
     void getAllOrders_withValidUserId_returnsMappedResponses() {
         Long userId = 10L;
+
+        // Prepare mock order
         LocalOrderItems line = new LocalOrderItems();
         LocalOrder order = new LocalOrder();
         order.setItems(List.of(line));
         order.setAddress(new Address());
-        when(localOrderRepository.findByLocalUser_Id(userId)).thenReturn(List.of(order));
 
+        // Page containing our single order
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<LocalOrder> orderPage = new PageImpl<>(List.of(order), pageable, 1);
+
+        when(localOrderRepository.findByLocalUser_IdAndStatus(userId, OrderStatus.PENDING, pageable)).thenReturn(orderPage);
+
+        // Prepare DTO mappings
         OrderItemsResponse lineDto = new OrderItemsResponse();
         AddressResponse addrDto = new AddressResponse();
         OrderResponse orderDto = new OrderResponse();
@@ -78,13 +90,18 @@ class OrderServiceTest {
         when(modelMapper.map(order.getAddress(), AddressResponse.class)).thenReturn(addrDto);
         when(modelMapper.map(order, OrderResponse.class)).thenReturn(orderDto);
 
-        List<OrderResponse> result = orderService.getAllOrders(userId);
+        // Call service
+        Page<OrderResponse> result = orderService.getAllOrders(userId, 0, 10);
 
-        Assertions.assertEquals(1, result.size());
-        Assertions.assertEquals(orderDto, result.get(0));
-        Assertions.assertEquals(List.of(lineDto), result.get(0).getItems());
-        Assertions.assertEquals(addrDto, result.get(0).getAddressResponse());
+        // Assertions
+        Assertions.assertEquals(1, result.getTotalElements());
+        OrderResponse mappedOrder = result.getContent().get(0);
+
+        Assertions.assertEquals(orderDto, mappedOrder);
+        Assertions.assertEquals(List.of(lineDto), mappedOrder.getItems());
+        Assertions.assertEquals(addrDto, mappedOrder.getAddressResponse());
     }
+
 
     // -------- Negative branches for createOrder --------
 

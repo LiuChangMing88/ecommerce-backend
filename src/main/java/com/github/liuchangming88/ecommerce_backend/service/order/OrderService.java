@@ -17,6 +17,9 @@ import com.github.liuchangming88.ecommerce_backend.model.user.LocalUser;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -42,26 +45,27 @@ public class OrderService {
         this.inventoryRepository = inventoryRepository;
     }
 
-    public List<OrderResponse> getAllOrders(Long userId) {
-        // Get all the user's orders
-        List<LocalOrder> localOrderList = localOrderRepository.findByLocalUser_Id(userId);
+    public Page<OrderResponse> getAllOrders(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
 
-        // Turn it into dto and then returns to the client
-        return localOrderList.stream()
-                .map(orderList -> {
-                    // Map LocalOrderQuantities into its dto
-                    List<OrderItemsResponse> orderItemsResponseList = orderList.getItems().stream()
-                            .map(q -> modelMapper.map(q, OrderItemsResponse.class)).toList();
+        Page<LocalOrder> localOrdersPage = localOrderRepository.findByLocalUser_IdAndStatus(userId, OrderStatus.PENDING, pageable);
 
-                    // Map Address into its dto
-                    AddressResponse addressResponse = modelMapper.map(orderList.getAddress(), AddressResponse.class);
+        return localOrdersPage.map(order -> {
+            // Map items
+            List<OrderItemsResponse> orderItemsResponseList = order.getItems().stream()
+                    .map(q -> modelMapper.map(q, OrderItemsResponse.class))
+                    .toList();
 
-                    // Map the final LocalOrder into its dto and then return it to the list of OrderResponseBody
-                    OrderResponse orderResponse = modelMapper.map(orderList, OrderResponse.class);
-                    orderResponse.setItems(orderItemsResponseList);
-                    orderResponse.setAddressResponse(addressResponse);
-                    return orderResponse;
-                }).toList();
+            // Map address
+            AddressResponse addressResponse = modelMapper.map(order.getAddress(), AddressResponse.class);
+
+            // Map order itself
+            OrderResponse orderResponse = modelMapper.map(order, OrderResponse.class);
+            orderResponse.setItems(orderItemsResponseList);
+            orderResponse.setAddressResponse(addressResponse);
+
+            return orderResponse;
+        });
     }
 
     @Transactional

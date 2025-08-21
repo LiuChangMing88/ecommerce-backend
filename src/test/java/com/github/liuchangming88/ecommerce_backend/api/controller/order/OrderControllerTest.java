@@ -51,8 +51,8 @@ public class OrderControllerTest {
                                 .header("Authorization", "Bearer " + userToken)
                 ).andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(expectedNumberOfOrders));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(expectedNumberOfOrders));
     }
 
 }
