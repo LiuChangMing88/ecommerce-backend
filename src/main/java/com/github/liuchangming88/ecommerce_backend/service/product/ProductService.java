@@ -1,6 +1,7 @@
 package com.github.liuchangming88.ecommerce_backend.service.product;
 
 import com.github.liuchangming88.ecommerce_backend.api.model.ProductResponse;
+import com.github.liuchangming88.ecommerce_backend.configuration.JpaDataPage.RestPage;
 import com.github.liuchangming88.ecommerce_backend.exception.ResourceNotFoundException;
 import com.github.liuchangming88.ecommerce_backend.model.product.Product;
 import com.github.liuchangming88.ecommerce_backend.model.product.repository.ProductRepository;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class ProductService {
@@ -23,11 +26,13 @@ public class ProductService {
     }
 
     @Cacheable(value = "products", key = "#page + '_' + #size")
-    public Page<ProductResponse> getAllProducts(int page, int size) {
+    public RestPage<ProductResponse> getAllProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
         Page<Product> productPage = productRepository.findAll(pageable);
-
-        return productPage.map(product -> modelMapper.map(product, ProductResponse.class));
+        List<ProductResponse> content = productPage.getContent().stream()
+                .map(product -> modelMapper.map(product, ProductResponse.class))
+                .toList();
+        return new RestPage<>(pageable, content, productPage.getTotalElements());
     }
 
     @Cacheable(value = "product", key = "#productId")

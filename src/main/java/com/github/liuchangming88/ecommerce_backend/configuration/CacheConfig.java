@@ -17,6 +17,7 @@ public class CacheConfig {
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(60)) // Set default TTL to 60 minutes
                 .disableCachingNullValues()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        new GenericJackson2JsonRedisSerializer()));
     }
 }
