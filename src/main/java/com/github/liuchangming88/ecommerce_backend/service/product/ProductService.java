@@ -5,6 +5,7 @@ import com.github.liuchangming88.ecommerce_backend.exception.ResourceNotFoundExc
 import com.github.liuchangming88.ecommerce_backend.model.product.Product;
 import com.github.liuchangming88.ecommerce_backend.model.product.repository.ProductRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ public class ProductService {
         this.modelMapper = modelMapper;
     }
 
+    @Cacheable(value = "products", key = "#page + '_' + #size")
     public Page<ProductResponse> getAllProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
         Page<Product> productPage = productRepository.findAll(pageable);
@@ -28,6 +30,7 @@ public class ProductService {
         return productPage.map(product -> modelMapper.map(product, ProductResponse.class));
     }
 
+    @Cacheable(value = "product", key = "#productId")
     public ProductResponse getProduct(Long productId) {
         return productRepository.findById(productId)
                 .map(product -> modelMapper.map(product, ProductResponse.class))
