@@ -1,10 +1,45 @@
+version: "3.8"
 services:
-  db:
-    image: postgres
+  app:
+    container_name: ecommerce
+    image: liuchangming/ecommerce-backend
+    restart: unless-stopped
+    env_file: .env-docker
     ports:
-      - "5432:5432"
-    restart: always
+      - "8080:8080"
+    depends_on:
+      - smtp
+      - db
+      - redis
+    networks:
+      - backend
+
+  smtp:
+    container_name: LTM-smtp
+    image: rnwood/smtp4dev
+    restart: unless-stopped
+    ports:
+      - "5000:80" # for web UI
+    networks:
+      - backend
+  db:
+    container_name: LTM-db
+    image: postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: ecommerce
+    networks:
+      - backend
+  redis:
+    container_name: LTM-redis
+    image: redis
+    restart: unless-stopped
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    driver: bridge

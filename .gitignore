@@ -34,6 +34,7 @@ build/
 
 ### KEYS ###
 .env
+.env-docker
 
 ### sql
 data.sql
